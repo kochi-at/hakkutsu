@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 function Camera({ onCapture }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const [error, setError] = useState("");
 
@@ -106,6 +107,30 @@ const takePhoto = () => {
   onCapture(imageData);
 };
 
+const handleFileSelect = (event) => {
+  const file = event.target.files?.[0];
+
+  // 同じファイルを続けて選んでもchangeイベントが発火するようにリセットしておく。
+  event.target.value = "";
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    stopCamera();
+    onCapture(reader.result);
+  };
+
+  reader.onerror = () => {
+    setError("ファイルを読み込めませんでした。");
+  };
+
+  reader.readAsDataURL(file);
+};
+
   return (
     <div
       style={{
@@ -134,16 +159,42 @@ const takePhoto = () => {
             }}
           />
 
-          <button
-            onClick={takePhoto}
+          <div
             style={{
-              padding: "12px 30px",
-              fontSize: "18px",
-              cursor: "pointer",
+              display: "flex",
+              gap: "12px",
             }}
           >
-            撮影
-          </button>
+            <button
+              onClick={takePhoto}
+              style={{
+                padding: "12px 30px",
+                fontSize: "18px",
+                cursor: "pointer",
+              }}
+            >
+              撮影
+            </button>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                padding: "12px 30px",
+                fontSize: "18px",
+                cursor: "pointer",
+              }}
+            >
+              ファイルから選択
+            </button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
         </>
       )}
     </div>

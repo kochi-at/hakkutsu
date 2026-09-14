@@ -15,6 +15,13 @@ RESIZE_LONG_EDGE: int = 768
 # 画像中央を対象領域とみなす円の半径。短辺に対する割合。
 SUBJECT_RADIUS_RATIO: float = 0.40
 
+# DCTで劣化させるブロックの一辺(px)。JPEGと同じ8を採用。
+DCT_BLOCK_SIZE: int = 8
+
+# 1ブロック(DCT_BLOCK_SIZE**2個)の係数のうち、低周波側から残す個数。
+# 少ないほど高周波成分(細かい模様)を大きく間引き、劣化が強くなる。
+DCT_KEEP_COEFFS: int = 10
+
 # RGB(0〜1)をYIQへ変換するNTSC標準の行列。
 # YIQは色を「明るさ1つ + 色味2つ」に分解する表現で、
 #   Y = 明るさ(輝度)
@@ -88,6 +95,59 @@ def load_rgb_array(image_bytes: bytes) -> npt.NDArray[np.float64]:
         raise AppraisalError("画像を読み込めませんでした") from exc
 
 
+def _dct_basis_matrix(size: int) -> npt.NDArray[np.float64]:
+    """直交なDCT-II基底行列(size×size)を作る。
+    この行列を C とすると、ブロックへ C @ block @ C.T を掛けると空間領域→周波数領域、
+    逆に C.T @ freq @ C を掛けると周波数領域→空間領域に戻る(順方向・逆方向で同じ行列を使い回せる)。"""
+    n = np.arange(size)
+    k = n.reshape(-1, 1)
+    basis = np.cos(np.pi / size * (n + 0.5) * k)
+    basis[0, :] /= np.sqrt(2)  # 周波数0(DC成分)の行だけ正規化の係数が異なる。
+    return basis * np.sqrt(2.0 / size)
+
+
+def _low_frequency_mask(size: int, keep: int) -> npt.NDArray[np.bool_]:
+    """(行+列)の和が小さい、つまり低周波側からkeep個の係数だけがTrueになる
+    (size, size)の真偽値配列を作る(JPEGのジグザグ順の簡易版)。"""
+    total_freq = np.add.outer(np.arange(size), np.arange(size))
+    # 「昇順に並べ替えた位置」をもう一度argsortすると、各要素の順位が得られる。
+    rank = np.argsort(total_freq, axis=None, kind="stable").argsort().reshape(size, size)
+    return rank < keep
+
+
+_DCT_BASIS: npt.NDArray[np.float64] = _dct_basis_matrix(DCT_BLOCK_SIZE)
+_DCT_KEEP_MASK: npt.NDArray[np.bool_] = _low_frequency_mask(DCT_BLOCK_SIZE, DCT_KEEP_COEFFS)
+
+
+def dct_degrade(rgb: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """DCTブロックごとに高周波成分を間引いてから逆DCTで復元し、劣化させた画像を返す。
+    JPEGの非可逆圧縮と同じ原理。形はrgbと同じ(高さ, 幅, 3)。"""
+    height, width = rgb.shape[:2]
+    block = DCT_BLOCK_SIZE
+
+    # ブロックの境界に揃うよう、端の画素を延長してパディングする。
+    pad_height = (-height) % block
+    pad_width = (-width) % block
+    padded = np.pad(rgb, ((0, pad_height), (0, pad_width), (0, 0)), mode="edge")
+
+    blocks_h, blocks_w = padded.shape[0] // block, padded.shape[1] // block
+    # (ブロック行, ブロック列, チャンネル, ブロック内の行, ブロック内の列)に並べ替え、
+    # 全ブロック・全チャンネルをまとめて処理できるようにする(ループは書かない)。
+    blocks = padded.reshape(blocks_h, block, blocks_w, block, 3).transpose(0, 2, 4, 1, 3)
+
+    # 順方向DCT: 周波数領域 = 基底行列 @ ブロック @ 基底行列の転置。
+    freq = np.einsum("ij,...jk,lk->...il", _DCT_BASIS, blocks, _DCT_BASIS)
+    freq *= _DCT_KEEP_MASK  # 低周波側だけ残し、高周波成分を0にする(ここが圧縮)。
+
+    # 逆DCT: 空間領域 = 基底行列の転置 @ 周波数領域 @ 基底行列。
+    restored = np.einsum("ji,...jk,kl->...il", _DCT_BASIS, freq, _DCT_BASIS)
+
+    # (ブロック行, ブロック内の行, ブロック列, ブロック内の列, チャンネル)に戻してから結合する。
+    restored = restored.transpose(0, 3, 1, 4, 2).reshape(padded.shape)
+    # 間引きで元の0〜1の範囲をわずかにはみ出すことがあるためクリップする。
+    return np.clip(restored[:height, :width], 0.0, 1.0)
+
+
 def center_circle_mask(height: int, width: int) -> npt.NDArray[np.bool_]:
     """画像中央の円(対象領域)だけがTrueになる真偽値の配列を作る。"""
     # 各画素の座標を縦ベクトル・横ベクトルとして用意し、中心からの距離を一度に計算する。
@@ -121,6 +181,8 @@ def _to_element(hue_angle: float, saturation: float) -> str:
 def appraise(image_bytes: bytes) -> AppraisalResult:
     """写真のバイト列から、レア度・属性と、その根拠となる数値を求める。"""
     rgb = load_rgb_array(image_bytes)
+    # 高周波の細部をあらかじめ間引いた画像を鑑定対象にする(JPEG相当の劣化)。
+    rgb = dct_degrade(rgb)
     height, width = rgb.shape[:2]
 
     # 全画素をまとめてYIQへ変換する(画素ごとのループは書かず、行列積で一括処理する)。

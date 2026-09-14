@@ -17,6 +17,7 @@ from appraisal import (
     AppraisalError,
     appraise,
     center_circle_mask,
+    dct_degrade,
     load_rgb_array,
 )
 
@@ -68,13 +69,13 @@ def _axis_panel(
 
 
 def render_channels(image_bytes: bytes) -> bytes:
-    """元画像・Y・I・Qを2×2に並べた確認用のPNGを作る。"""
-    rgb = load_rgb_array(image_bytes)
+    """DCT劣化後・Y・I・Qを2×2に並べた確認用のPNGを作る。appraise()と同じ画像を可視化する。"""
+    rgb = dct_degrade(load_rgb_array(image_bytes))
     height, width = rgb.shape[:2]
     yiq = rgb @ RGB_TO_YIQ.T
 
     panels = [
-        ("RGB + subject area", _subject_panel(rgb, height, width)),
+        ("DCT-degraded RGB + subject area", _subject_panel(rgb, height, width)),
         ("Y (luminance)", _to_image(np.repeat(yiq[..., :1], 3, axis=2))),
         ("I (orange <-> cyan)", _axis_panel(yiq[..., 1], IN_PHASE_COLORS)),
         ("Q (purple <-> green)", _axis_panel(yiq[..., 2], QUADRATURE_COLORS)),
