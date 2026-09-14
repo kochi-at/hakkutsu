@@ -1,10 +1,12 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import { Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Capture from './pages/CameraPage'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/CameraPage" element={<CameraPage />} />
+    </Routes>
+  )
+}
