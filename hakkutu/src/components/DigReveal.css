@@ -1,0 +1,194 @@
+.dig-reveal {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.dig-reveal-skip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--relic-ink-dim);
+  background: transparent;
+  border: 1px solid var(--relic-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  z-index: 5;
+}
+.dig-reveal-skip:hover,
+.dig-reveal-skip:focus-visible {
+  color: var(--relic-gold);
+  border-color: var(--relic-gold-dim);
+}
+
+/* ambient light rays, fade in once the reveal begins */
+.dig-reveal-rays {
+  position: absolute;
+  inset: -20%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 0;
+}
+.dig-reveal-rays::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(241, 212, 141, 0.22) 0deg 5deg, transparent 5deg 28deg);
+  animation: dig-rays-spin 11s linear infinite;
+}
+.dig-reveal[data-phase="flash"] .dig-reveal-rays,
+.dig-reveal[data-phase="rolling"] .dig-reveal-rays,
+.dig-reveal[data-phase="done"] .dig-reveal-rays {
+  opacity: 1;
+}
+
+/* flash overlay for the "moment of discovery" */
+.dig-reveal-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 249, 232, 0.95), rgba(241, 212, 141, 0.25) 55%, transparent 78%);
+}
+.dig-reveal[data-phase="flash"] .dig-reveal-flash {
+  animation: dig-flash-pulse 0.5s ease-out;
+}
+
+/* inspecting block: loupe icon + "鑑定中..." label */
+.dig-reveal-inspect {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.dig-reveal[data-phase="flash"] .dig-reveal-inspect,
+.dig-reveal[data-phase="rolling"] .dig-reveal-inspect,
+.dig-reveal[data-phase="done"] .dig-reveal-inspect {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+.dig-reveal-scanline {
+  position: relative;
+  width: 120px;
+  height: 2px;
+}
+.dig-reveal-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--relic-gold), transparent);
+  opacity: 0.55;
+  animation: dig-scanline-pulse 1.6s ease-in-out infinite;
+}
+
+.dig-pick {
+  display: inline-block;
+  font-size: 40px;
+  animation: dig-loupe-scan 1.6s ease-in-out infinite;
+}
+
+.dig-label {
+  margin: 0;
+  font-size: 14px;
+  color: var(--relic-gold-dim);
+  letter-spacing: 0.12em;
+}
+
+/* rarity roll block: number + stars climbing together */
+.dig-reveal-rarity {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.dig-reveal[data-phase="rolling"] .dig-reveal-rarity,
+.dig-reveal[data-phase="done"] .dig-reveal-rarity {
+  opacity: 1;
+}
+
+.dig-rarity-num {
+  font-size: clamp(40px, 11vw, 56px);
+  font-weight: 700;
+  color: var(--relic-gold);
+  text-shadow: 0 0 20px rgba(241, 212, 141, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.dig-stars {
+  position: relative;
+  display: inline-block;
+  font-size: 24px;
+  letter-spacing: 0.12em;
+}
+.dig-stars-empty {
+  color: var(--relic-line);
+}
+.dig-stars-filled {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  width: 0;
+  color: var(--relic-gold);
+}
+
+.dig-tier {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--relic-gold);
+  opacity: 0;
+  transform: scale(0.4) rotate(-8deg);
+  animation: dig-stamp-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+
+@keyframes dig-rays-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes dig-flash-pulse {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes dig-scanline-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.7; }
+}
+@keyframes dig-loupe-scan {
+  0%, 100% { transform: translateX(-14px) rotate(-6deg); }
+  50% { transform: translateX(14px) rotate(6deg); }
+}
+@keyframes dig-stamp-in {
+  0% { opacity: 0; transform: scale(0) rotate(-14deg); }
+  60% { opacity: 1; transform: scale(1.15) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dig-pick,
+  .dig-reveal-scanline::after,
+  .dig-reveal-rays::before {
+    animation: none !important;
+  }
+}
