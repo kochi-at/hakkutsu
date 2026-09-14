@@ -1,7 +1,3 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-})
+// Keep this compatibility entry point while the application configuration
+// lives in TypeScript. Vite resolves .js before .ts when both are present.
+export { default } from './vite.config.ts'
