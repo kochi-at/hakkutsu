@@ -1,12 +1,9 @@
-import { Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import Capture from './pages/CameraPage'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
 
-function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/CameraPage" element={<CameraPage />} />
-    </Routes>
-  )
-}
+createRoot(document.getElementById('root')).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+)
