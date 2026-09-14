@@ -1,0 +1,11 @@
+.relic-result { min-height: 100vh; box-sizing: border-box; padding: 36px 20px; background: #100e0b; color: #efe6d2; }
+.relic-result h1 { color: #f1d48d; font-size: clamp(28px, 5vw, 44px); line-height: 1.3; }
+.relic-result h2 { color: #f1d48d; }
+.relic-eyebrow { color: #c9ad74; letter-spacing: 0.15em; }
+.relic-photo { display: block; width: min(100%, 360px); max-height: 480px; object-fit: contain; margin: 24px auto; border-radius: 16px; }
+.relic-score { color: #f1d48d; font-size: 24px; margin-bottom: 24px; }
+.relic-result section { max-width: 640px; margin: 16px auto; padding: 24px; text-align: left; border: 1px solid #5c4c2f; border-radius: 12px; background: #1c1811; }
+.relic-result section p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; }
+.relic-note { color: #bdb29c; margin: 24px 0; font-size: 14px; }
+.relic-result nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+.relic-result a { color: #f1d48d; }
