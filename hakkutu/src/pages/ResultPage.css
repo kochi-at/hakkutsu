@@ -3,7 +3,15 @@
 .relic-result h2 { color: #f1d48d; }
 .relic-eyebrow { color: #c9ad74; letter-spacing: 0.15em; }
 .relic-photo { display: block; width: min(100%, 360px); max-height: 480px; object-fit: contain; margin: 24px auto; border-radius: 16px; }
-.relic-score { color: #f1d48d; font-size: 24px; margin-bottom: 24px; }
+.relic-score { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; color: #f1d48d; font-size: 24px; margin-bottom: 24px; }
+.relic-rarity { letter-spacing: 0.1em; }
+.relic-rarity-empty { color: #5c4c2f; }
+.relic-element { padding: 4px 14px; font-size: 16px; border: 1px solid #5c4c2f; border-radius: 999px; background: #1c1811; }
+.relic-stat { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.relic-stat-label { flex: 0 0 5em; font-size: 15px; }
+.relic-stat-bar { flex: 1; height: 10px; border-radius: 999px; background: #100e0b; overflow: hidden; }
+.relic-stat-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c9ad74, #f1d48d); }
+.relic-stat-value { flex: 0 0 2.5em; text-align: right; font-size: 15px; color: #f1d48d; }
 .relic-result section { max-width: 640px; margin: 16px auto; padding: 24px; text-align: left; border: 1px solid #5c4c2f; border-radius: 12px; background: #1c1811; }
 .relic-result section p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; }
 .relic-note { color: #bdb29c; margin: 24px 0; font-size: 14px; }

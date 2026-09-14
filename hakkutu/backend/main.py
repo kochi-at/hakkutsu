@@ -6,6 +6,9 @@ from uuid import uuid4
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image, UnidentifiedImageError
+
+from appraisal import AppraisalError, appraise
+from debug_view import router as debug_router
 from relic import evaluate_photo
 
 app = FastAPI(title="写真アップロードAPI")
@@ -15,6 +18,9 @@ app.add_middleware(
     allow_methods=["POST"],
     allow_headers=["*"],
 )
+
+# 閾値調整用。本番のフロントからは使わない。
+app.include_router(debug_router)
 
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -53,7 +59,12 @@ def upload_photo(file: Annotated[UploadFile, File()]):
             raise HTTPException(status_code=400, detail="有効な画像ではありません") from exc
 
         content_type, extension = IMAGE_TYPES[image_format]
-        evaluation = evaluate_photo(contents, content_type)
+        # 画素からレア度と属性を先に確定させ、その結果をLLMへの依頼に含める。
+        try:
+            appraisal = appraise(contents)
+        except AppraisalError as exc:
+            raise HTTPException(status_code=400, detail="有効な画像ではありません") from exc
+        evaluation = evaluate_photo(contents, content_type, appraisal)
         # クライアントのファイル名を保存先に使用せず、重複も避ける。
         photo_id = uuid4().hex
         filename = f"{photo_id}{extension}"

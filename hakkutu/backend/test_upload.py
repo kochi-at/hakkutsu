@@ -25,7 +25,8 @@ class UploadTests(unittest.TestCase):
                         self.assertEqual(response.status_code, 201)
                         result = response.json()
                         self.assertEqual(result["evaluation"]["comment"], "伝説の聖遺物です")
-                        evaluate.assert_called_with(data.getvalue(), content_type)
+                        evaluate.assert_called_with(data.getvalue(), content_type,
+                                                    main.appraise(data.getvalue()))
                         self.assertEqual((result["width"], result["height"]), (8, 12))
                         self.assertTrue(result["filename"].endswith(extension))
                         self.assertEqual((Path(directory) / result["filename"]).read_bytes(), data.getvalue())
