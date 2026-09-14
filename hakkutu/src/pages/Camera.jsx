@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import "./Camera.css";
 
 function Camera({ onCapture }) {
   const videoRef = useRef(null);
@@ -132,14 +133,7 @@ const handleFileSelect = (event) => {
 };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "20px",
-      }}
-    >
+    <div className="camera">
       {error ? (
         <p>{error}</p>
       ) : (

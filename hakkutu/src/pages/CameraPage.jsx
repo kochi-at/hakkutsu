@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Camera from "./Camera";
+import "./CameraPage.css";
 
 function CameraPage({ onBack }) {
   const [photo, setPhoto] = useState(null);
@@ -65,18 +66,7 @@ function CameraPage({ onBack }) {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        color: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        padding: "16px",
-        boxSizing: "border-box",
-        backgroundColor: "#060606",
-      }}
-    >
+    <main className="camera-page">
       <button
         disabled={isSending}
         onClick={onBack}
@@ -91,7 +81,19 @@ function CameraPage({ onBack }) {
       </button>
 
       {!photo ? (
-        <Camera onCapture={handleCapture} />
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "430px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <Camera onCapture={handleCapture} />
+          {error && <p role="alert" style={{ color: "#ffaaaa" }}>{error}</p>}
+        </div>
       ) : (
         <div
           style={{
@@ -143,7 +145,7 @@ function CameraPage({ onBack }) {
           {error && <p role="alert" style={{ color: "#ffaaaa", marginTop: "16px" }}>{error}</p>}
         </div>
       )}
-    </div>
+    </main>
   );
 }
 
