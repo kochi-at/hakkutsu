@@ -44,6 +44,14 @@ EVALUATION = {
 
 
 class RelicTests(unittest.TestCase):
+    def test_mock_mode_does_not_call_gemini(self):
+        with patch.dict(os.environ, {"MOCK_GEMINI": "true"}), patch("relic.httpx.Client") as client:
+            result = relic.evaluate_photo(b"photo", "image/png", APPRAISAL)
+            self.assertEqual(result["name"], "星屑の試作聖杯")
+            self.assertEqual(result["name_parts"][0], {"text": "星屑", "reading": "ほしくず"})
+            self.assertEqual(result["rarity"], APPRAISAL.rarity)
+            client.assert_not_called()
+
     def test_image_and_schema_sent_and_result_validated(self):
         response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
             "parts": [{"text": json.dumps(LORE)}]}}]})
