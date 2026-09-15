@@ -54,10 +54,11 @@ ELEMENT_SECTORS: tuple[tuple[float, str], ...] = (
 
 # --- ステータス算出用の定数 -------------------------------------------
 # 攻撃力(エッジ密度)・耐久(分散)・魔力(彩度)は、生の特徴量をこれらの値で割って
-# 0〜1に正規化してから100倍する。当日、実物の聖遺物を撮影しながら調整する。
-EDGE_MAX: float = 0.15
-VAR_MAX: float = 0.02
-SAT_MAX: float = 0.25
+# 0〜1に正規化してから100倍する。backend/uploads の実写真28枚をappraise()に通した
+# 実測値のp90(上位10%だけが100に張り付く水準)に合わせている。
+EDGE_MAX: float = 0.181
+VAR_MAX: float = 0.064
+SAT_MAX: float = 0.062
 
 # エッジ密度の平均を取る際、マスク境界(輝度が急変し偽のエッジが出る場所)を
 # 避けるために円を内側へ収縮させるピクセル数。
@@ -256,11 +257,11 @@ def _to_rarity(luminance_ratio: float) -> int:
 
 
 def _to_element(hue_angle: float) -> str:
-    """色相の角度から属性を決める。"""
+    """色相の角度から属性を決める。hue_angleは%360.0されているため必ずいずれかの区間に入る。"""
     for upper_bound, element in ELEMENT_SECTORS:
         if hue_angle < upper_bound:
             return element
-    return ELEMENT_SECTORS[-1][1]
+    raise AssertionError("hue_angle must be in [0, 360)")
 
 
 def appraise(image_bytes: bytes) -> AppraisalResult:
