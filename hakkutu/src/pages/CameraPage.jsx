@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Camera from "./Camera";
 import DigReveal from "../components/DigReveal";
@@ -11,13 +11,14 @@ function CameraPage({ onBack }) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [evaluationForReveal, setEvaluationForReveal] = useState(null);
+  const abortControllerRef = useRef(null);
   const navigate = useNavigate();
 
   const handleCapture = (imageData) => {
     setPhoto(imageData);
   };
 
-  const sendPhoto = async () => {
+  const sendPhoto = async (signal) => {
     if (!photo) {
       return false;
     }
@@ -35,6 +36,7 @@ function CameraPage({ onBack }) {
       const result = await fetch(`${API_URL}/upload`, {
         method: "POST",
         body: formData,
+        signal,
       });
 
       const data = await result.json();
@@ -46,6 +48,10 @@ function CameraPage({ onBack }) {
 
       return data;
     } catch (error) {
+      if (error.name === "AbortError") {
+        // ユーザーによるキャンセル。エラー表示はしない
+        return false;
+      }
       console.error("送信エラー:", error);
       setError(error.message === "Failed to fetch" ? "サーバーに接続できません。FastAPIが起動しているか確認してください。" : error.message);
 
@@ -55,10 +61,12 @@ function CameraPage({ onBack }) {
 
   const handleUsePhoto = async () => {
     if (isSending) return;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setIsSending(true);
     setError("");
     setEvaluationForReveal(null);
-    const data = await sendPhoto();
+    const data = await sendPhoto(controller.signal);
     setIsSending(false);
     if (data) {
       // 鑑定結果が届いたので、待機中だったDigRevealをフラッシュ以降へ進める
@@ -73,6 +81,14 @@ function CameraPage({ onBack }) {
         evaluation: evaluationForReveal,
       },
     });
+  };
+
+  const handleCancelReveal = () => {
+    abortControllerRef.current?.abort();
+    setIsSending(false);
+    setEvaluationForReveal(null);
+    setError("");
+    setPhoto(null);
   };
 
   return (
@@ -104,8 +120,6 @@ function CameraPage({ onBack }) {
           <Camera onCapture={handleCapture} />
           {error && <p role="alert" style={{ color: "#ffaaaa" }}>{error}</p>}
         </div>
-      ) : isSending || evaluationForReveal ? (
-        <DigReveal evaluation={evaluationForReveal} onComplete={handleRevealComplete} />
       ) : (
         <div
           style={{
@@ -114,44 +128,59 @@ function CameraPage({ onBack }) {
             textAlign: "center",
           }}
         >
-          <img
-            src={photo}
-            alt="撮影した写真"
-            style={{
-              width: "100%",
-              borderRadius: "12px",
-            }}
-          />
-
-          <div
-            style={{
-              marginTop: "20px",
-              display: "flex",
-              justifyContent: "center",
-              gap: "12px",
-            }}
-          >
-            <button
-              onClick={() => { setPhoto(null); setError(""); }}
+          <div className="camera-photo-frame">
+            <img
+              src={photo}
+              alt="撮影した写真"
               style={{
-                padding: "10px 20px",
-                cursor: "pointer",
+                width: "100%",
+                borderRadius: "12px",
               }}
-            >
-              撮り直す
-            </button>
-
-            <button
-              onClick={handleUsePhoto}
-              style={{
-                padding: "10px 20px",
-                cursor: "pointer",
-              }}
-            >
-              この写真を鑑定する
-            </button>
+            />
+            {(isSending || evaluationForReveal) && (
+              <div className="camera-dig-overlay">
+                <DigReveal
+                  evaluation={evaluationForReveal}
+                  onComplete={handleRevealComplete}
+                  onCancel={handleCancelReveal}
+                />
+              </div>
+            )}
           </div>
-          {error && <p role="alert" style={{ color: "#ffaaaa", marginTop: "16px" }}>{error}</p>}
+
+          {!(isSending || evaluationForReveal) && (
+            <>
+              <div
+                style={{
+                  marginTop: "20px",
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "12px",
+                }}
+              >
+                <button
+                  onClick={() => { setPhoto(null); setError(""); }}
+                  style={{
+                    padding: "10px 20px",
+                    cursor: "pointer",
+                  }}
+                >
+                  撮り直す
+                </button>
+
+                <button
+                  onClick={handleUsePhoto}
+                  style={{
+                    padding: "10px 20px",
+                    cursor: "pointer",
+                  }}
+                >
+                  この写真を鑑定する
+                </button>
+              </div>
+              {error && <p role="alert" style={{ color: "#ffaaaa", marginTop: "16px" }}>{error}</p>}
+            </>
+          )}
         </div>
       )}
     </main>

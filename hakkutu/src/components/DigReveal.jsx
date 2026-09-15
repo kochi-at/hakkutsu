@@ -4,7 +4,7 @@ import "./DigReveal.css";
 
 const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
 
-export default function DigReveal({ evaluation, onComplete }) {
+export default function DigReveal({ evaluation, onComplete, onCancel }) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
   // 実際の鑑定結果(evaluation)が届くまでは "inspecting" のまま待機し続ける。
@@ -71,6 +71,11 @@ export default function DigReveal({ evaluation, onComplete }) {
         <div className="dig-reveal-scanline" aria-hidden="true" />
         <span className="dig-pick" aria-hidden="true">🔍</span>
         <p className="dig-label">鑑定中...</p>
+        {onCancel && (
+          <button type="button" className="dig-reveal-cancel" onClick={onCancel}>
+            キャンセル
+          </button>
+        )}
       </div>
 
       <div className="dig-reveal-rarity">

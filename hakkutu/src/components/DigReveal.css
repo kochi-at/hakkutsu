@@ -33,6 +33,24 @@
   border-color: var(--relic-gold-dim);
 }
 
+/* 鑑定中アイコンの少し下に置く、元サイズの1/2ほどの小さいボタン */
+.dig-reveal-cancel {
+  margin-top: 10px;
+  font-family: inherit;
+  font-size: 6px;
+  color: var(--relic-ink-dim);
+  background: transparent;
+  border: 1px solid var(--relic-line);
+  border-radius: 999px;
+  padding: 3px 7px;
+  cursor: pointer;
+}
+.dig-reveal-cancel:hover,
+.dig-reveal-cancel:focus-visible {
+  color: var(--relic-gold);
+  border-color: var(--relic-gold-dim);
+}
+
 /* ambient light rays, fade in once the reveal begins */
 .dig-reveal-rays {
   position: absolute;
