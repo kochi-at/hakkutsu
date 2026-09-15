@@ -68,6 +68,12 @@ class RelicTests(unittest.TestCase):
             prompt = request["json"]["contents"][0]["parts"][0]["text"]
             self.assertIn("レア度4", prompt)
             self.assertIn("火", prompt)
+            system_prompt = request["json"]["systemInstruction"]["parts"][0]["text"]
+            self.assertIn("name_partsとlore_parts", system_prompt)
+            self.assertIn("漢字を含む語をtext、その読みをひらがなのreading", system_prompt)
+            self.assertIn("その内容は読まず、形や模様として扱う", system_prompt)
+            self.assertIn("name・name_parts・lore・lore_partsに引用、言い換え、翻訳しない", system_prompt)
+            self.assertIn("文字以外の形・色・服装・ポーズだけを根拠", system_prompt)
             # LLMに返させるスキーマにレア度と属性を含めない。
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
             self.assertNotIn("rarity", schema_fields)
