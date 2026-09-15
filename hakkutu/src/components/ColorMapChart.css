@@ -1,0 +1,100 @@
+/* 裏返すたびに再マウントされるので、アニメーションは表示と同時に1回だけ走る。 */
+.cmap {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.cmap-plate {
+  fill: rgba(8, 7, 6, 0.78);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+}
+
+.cmap-sector { opacity: 0.13; }
+.cmap-sector[data-active] { animation: cmap-sector-light 700ms 1150ms ease-out both; }
+
+.cmap-ring { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.cmap-ring--outer { stroke: rgba(255, 255, 255, 0.35); }
+.cmap-tick { stroke: rgba(255, 255, 255, 0.3); stroke-width: 1; }
+.cmap-tick[data-major] { stroke: rgba(255, 255, 255, 0.7); stroke-width: 1.5; }
+.cmap-axis { stroke: rgba(255, 255, 255, 0.2); stroke-width: 1; stroke-dasharray: 2 4; }
+.cmap-axis-label { fill: rgba(255, 255, 255, 0.5); font-size: 10px; font-style: italic; }
+
+/* 重なるほど明るくなり、星が密集して光っているように見せる */
+.cmap-dot {
+  transform: translate(var(--x), var(--y));
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  animation: cmap-burst 760ms var(--delay) cubic-bezier(0.16, 0.84, 0.3, 1) both;
+}
+
+.cmap-cluster {
+  transform: translate(var(--x), var(--y));
+  animation: cmap-fade 500ms 800ms ease-out both;
+}
+.cmap-cluster-halo {
+  fill: rgba(255, 255, 255, 0.04);
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.cmap-cluster-core { fill: rgba(255, 255, 255, 0.75); }
+.cmap-cluster[data-dominant] .cmap-cluster-halo {
+  fill: var(--cmap-accent);
+  fill-opacity: 0.22;
+  stroke: var(--cmap-accent);
+  stroke-width: 2;
+  stroke-dasharray: none;
+  animation: cmap-pulse 1.8s 1.4s ease-in-out infinite;
+}
+.cmap-cluster[data-dominant] .cmap-cluster-core { fill: #fff; }
+
+/* 行き過ぎて戻るイージングで、計器の針が振れて止まるように見せる */
+.cmap-needle {
+  transform: rotate(var(--angle));
+  animation: cmap-sweep 950ms 520ms cubic-bezier(0.3, 1.45, 0.5, 1) both;
+}
+.cmap-needle line { stroke: #fff8e8; stroke-width: 2; stroke-linecap: round; }
+.cmap-needle circle { fill: var(--cmap-accent); stroke: #fff8e8; stroke-width: 1.5; }
+.cmap-hub { fill: #fff8e8; stroke: rgba(0, 0, 0, 0.5); stroke-width: 1; }
+
+.cmap-label circle { fill: rgba(10, 9, 8, 0.85); stroke: rgba(255, 255, 255, 0.22); stroke-width: 1; }
+.cmap-label text { fill: rgba(255, 255, 255, 0.55); font-size: 13px; font-weight: 700; }
+.cmap-label[data-active] circle { stroke: var(--cmap-accent); stroke-width: 1.8; }
+.cmap-label[data-active] text { fill: var(--cmap-accent); }
+
+@keyframes cmap-burst {
+  from { transform: translate(0, 0) scale(0.3); opacity: 0; }
+  60% { opacity: 1; }
+  to { transform: translate(var(--x), var(--y)) scale(1); opacity: 0.9; }
+}
+@keyframes cmap-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes cmap-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+@keyframes cmap-sweep {
+  from { transform: rotate(0deg); opacity: 0; }
+  15% { opacity: 1; }
+  to { transform: rotate(var(--angle)); opacity: 1; }
+}
+@keyframes cmap-sector-light {
+  from { opacity: 0.13; }
+  to { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmap-dot,
+  .cmap-cluster,
+  .cmap-needle,
+  .cmap-sector[data-active],
+  .cmap-cluster[data-dominant] .cmap-cluster-halo { animation: none; }
+  .cmap-sector[data-active] { opacity: 0.5; }
+}

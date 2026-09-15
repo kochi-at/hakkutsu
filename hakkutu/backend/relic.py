@@ -77,6 +77,7 @@ def _build_result(lore: RelicLore, appraisal: AppraisalResult) -> dict:
             "saturation": appraisal.saturation,
             "hueAngle": appraisal.hue_angle,
         },
+        "colorMap": appraisal.color_map.model_dump(),
     }
 
 
