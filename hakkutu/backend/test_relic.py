@@ -33,7 +33,7 @@ LORE = {
 }
 APPRAISAL = AppraisalResult(rarity=4, element="火", luminance_ratio=1.1, saturation=0.2,
                             hue_angle=20.0, attack=60, endurance=70, magic=50,
-                            edge_density=0.05, y_variance=0.005, y=0.5, i=0.1, q=0.15)
+                            edge_density=0.05, detail_loss_ratio=0.2, y=0.5, i=0.1, q=0.15)
 EVALUATION = {
     **LORE,
     "rarity": 4,

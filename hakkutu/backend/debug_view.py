@@ -13,10 +13,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 from appraisal import (
     EDGE_MAX,
+    LOSS_MAX,
     RGB_TO_YIQ,
     SAT_MAX,
     SUBJECT_RADIUS_RATIO,
-    VAR_MAX,
     AppraisalError,
     appraise,
     center_circle_mask,
@@ -74,7 +74,7 @@ def _axis_panel(
 
 def render_channels(image_bytes: bytes) -> bytes:
     """DCT劣化後・Y・I・Qを2×2に並べた確認用のPNGを作る。appraise()と同じ画像を可視化する。"""
-    rgb = dct_degrade(load_rgb_array(image_bytes))
+    rgb = dct_degrade(load_rgb_array(image_bytes)).image
     height, width = rgb.shape[:2]
     yiq = rgb @ RGB_TO_YIQ.T
 
@@ -128,7 +128,7 @@ def debug_appraise(file: Annotated[UploadFile, File()]):
 
 @router.post("/stat-constants")
 def debug_stat_constants(file: Annotated[UploadFile, File()]):
-    """attack・endurance・magicの正規化前の生値と、現在のEDGE_MAX・VAR_MAX・SAT_MAX
+    """attack・endurance・magicの正規化前の生値と、現在のEDGE_MAX・LOSS_MAX・SAT_MAX
     で正規化した値(レア度補正前)を並べて返す。定数調整用で、レア度補正は含まない。"""
     try:
         contents = file.file.read(MAX_FILE_SIZE + 1)
@@ -140,13 +140,13 @@ def debug_stat_constants(file: Annotated[UploadFile, File()]):
             raise HTTPException(status_code=400, detail="有効な画像ではありません") from exc
 
         attack, endurance, magic = normalize_stats(
-            result.edge_density, result.y_variance, result.saturation
+            result.edge_density, result.detail_loss_ratio, result.saturation
         )
 
         return {
             "raw": {
                 "edge_density": result.edge_density,
-                "y_variance": result.y_variance,
+                "detail_loss_ratio": result.detail_loss_ratio,
                 "saturation": result.saturation,
             },
             "normalized": {
@@ -156,7 +156,7 @@ def debug_stat_constants(file: Annotated[UploadFile, File()]):
             },
             "constants": {
                 "EDGE_MAX": EDGE_MAX,
-                "VAR_MAX": VAR_MAX,
+                "LOSS_MAX": LOSS_MAX,
                 "SAT_MAX": SAT_MAX,
             },
         }

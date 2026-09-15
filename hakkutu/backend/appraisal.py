@@ -1,6 +1,7 @@
 """写真の画素から聖遺物のレア度と属性を算出する。LLMには依存しない。"""
 
 from io import BytesIO
+from typing import NamedTuple
 
 import numpy as np
 import numpy.typing as npt
@@ -68,20 +69,34 @@ ELEMENT_KMEANS_MAX_ITER: int = 20
 ELEMENT_KMEANS_MIN_WEIGHT: float = 1e-6
 
 # --- ステータス算出用の定数 -------------------------------------------
-# 攻撃力(エッジ密度)・耐久(分散)・魔力(彩度)は、生の特徴量をこれらの値で割って
-# 0〜1に正規化してから100倍する。VAR_MAX・SAT_MAXはbackend/uploadsの実写真をp90基準で
-# 調整した値。EDGE_MAXだけはp90に合わせると、実際の写真のエッジ密度分布が
-# (背景のノイズやJPEG劣化により)他の特徴量よりも中央値からp90までの幅が狭く、
+# 攻撃力(エッジ密度)・魔力(彩度)は、生の特徴量をこれらの値で割って0〜1に正規化
+# してから100倍する。SAT_MAXはbackend/uploadsの実写真をp90基準で調整した値。
+# EDGE_MAXだけはp90に合わせると、実際の写真のエッジ密度分布が(背景のノイズや
+# JPEG劣化により)他の特徴量よりも中央値からp90までの幅が狭く、
 # 「平均的な写真でも攻撃力の基礎値が70〜80に達する」→レア度補正(0.62〜1.10倍)後も
 # 常に攻撃力だけが耐久・魔力より頭一つ高くなる、という偏りが生じていた。
 # そのためEDGE_MAXだけは中央値が基礎値50付近になるよう(中央値÷0.5)で再調整している。
+#
+# LOSS_MAXは耐久(DCTの損失率)用。損失率は比なので数学的には0〜1に収まるが、
+# 自然画像はエネルギーが低周波に極端に偏る(まさにJPEGが成立する理由)ため、
+# 実写真40枚では0.013〜0.051しか動かず、そのまま使うと基礎値が常に95〜99に
+# 張り付いてレア度補正だけが値を決める状態になった。実測の中央値0.0372が
+# 基礎値50になるよう、EDGE_MAXと同じ考え方で調整している。
 EDGE_MAX: float = 0.27
-VAR_MAX: float = 0.064
+LOSS_MAX: float = 0.074
 SAT_MAX: float = 0.062
 
 # エッジ密度の平均を取る際、マスク境界(輝度が急変し偽のエッジが出る場所)を
 # 避けるために円を内側へ収縮させるピクセル数。
 EDGE_MASK_EROSION_PX: float = 6.0
+
+# ブロックあたりの平均AC成分エネルギーがこの値未満なら、対象領域はほぼ平坦
+# とみなして損失率を0(=最もなめらか)として扱う。
+# 平坦な面はAC成分自体がほぼ消えるため、割り算の分母が潰れて損失率がセンサー
+# ノイズに支配される(ノイズは全周波数に均等に散るので損失率が跳ね上がり、
+# 「一番ツルツルな写真が一番ザラザラ」と判定される)。実写真40枚では平坦な
+# 1枚が0.0014、残りは最小でも0.14と100倍離れていたため、その間に閾値を置く。
+MIN_AC_ENERGY_PER_BLOCK: float = 0.01
 
 # レア度によるステータス補正: 基礎値(0〜100) × (RARITY_BASE_MULTIPLIER + rarity × RARITY_STEP_MULTIPLIER)。
 RARITY_BASE_MULTIPLIER: float = 0.5
@@ -112,9 +127,11 @@ class AppraisalResult(BaseModel):
     attack: int = Field(ge=0, le=STAT_MAX_VALUE)
     endurance: int = Field(ge=0, le=STAT_MAX_VALUE)
     magic: int = Field(ge=0, le=STAT_MAX_VALUE)
-    # 正規化前の生の特徴量。EDGE_MAX・VAR_MAXの調整に使う(SAT_MAXの調整にはsaturationを使う)。
+    # 正規化前の生の特徴量。EDGE_MAXの調整に使う(SAT_MAXの調整にはsaturationを使う)。
     edge_density: float
-    y_variance: float
+    # DCTの間引きで失われた高周波成分が、対象領域のAC成分全体に占める割合。
+    # LOSS_MAXの調整に使う。
+    detail_loss_ratio: float
     # 対象領域のYIQの平均値。フロントエンドの解析値表示にそのまま使う。
     y: float
     i: float
@@ -175,9 +192,28 @@ _DCT_BASIS: npt.NDArray[np.float64] = _dct_basis_matrix(DCT_BLOCK_SIZE)
 _DCT_KEEP_MASK: npt.NDArray[np.bool_] = _low_frequency_mask(DCT_BLOCK_SIZE, DCT_KEEP_COEFFS)
 
 
-def dct_degrade(rgb: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+class DctResult(NamedTuple):
+    """dct_degrade()の戻り値。
+
+    image             劣化させた画像(高さ, 幅, 3)。
+    discarded_energy  間引きで捨てた高周波成分のエネルギー(ブロック行, ブロック列)。
+    ac_energy         DC成分を除く全AC成分のエネルギー(ブロック行, ブロック列)。
+
+    エネルギーは係数の二乗和。DCTが直交変換なので、パーセバルの定理により
+    画素側のエネルギーと一致する。特にAC成分のエネルギーはそのブロックの
+    輝度の分散(×画素数)と厳密に等しい。
+    """
+
+    image: npt.NDArray[np.float64]
+    discarded_energy: npt.NDArray[np.float64]
+    ac_energy: npt.NDArray[np.float64]
+
+
+def dct_degrade(rgb: npt.NDArray[np.float64]) -> DctResult:
     """DCTブロックごとに高周波成分を間引いてから逆DCTで復元し、劣化させた画像を返す。
-    JPEGの非可逆圧縮と同じ原理。形はrgbと同じ(高さ, 幅, 3)。"""
+    JPEGの非可逆圧縮と同じ原理。あわせて、間引きで捨てた成分のエネルギーも返す。
+    捨てた成分は復元画像には一切含まれないため、復元画像から計算する他の特徴量
+    (エッジ密度など)とは独立した情報になる。"""
     height, width = rgb.shape[:2]
     block = DCT_BLOCK_SIZE
 
@@ -193,6 +229,14 @@ def dct_degrade(rgb: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
 
     # 順方向DCT: 周波数領域 = 基底行列 @ ブロック @ 基底行列の転置。
     freq = np.einsum("ij,...jk,lk->...il", _DCT_BASIS, blocks, _DCT_BASIS)
+
+    # 間引きで消える成分のエネルギーを、消す前に測っておく。チャンネルは合算する
+    # (細部の情報はほぼ輝度側にあり、RGBを足しても輝度の細かさとほぼ同じになる)。
+    energy = freq**2
+    # 保持マスクの外側はすべて高周波。DC成分(0, 0)は必ず保持されるので混ざらない。
+    discarded_energy = (energy * ~_DCT_KEEP_MASK).sum(axis=(2, 3, 4))
+    ac_energy = energy.sum(axis=(2, 3, 4)) - energy[:, :, :, 0, 0].sum(axis=2)
+
     freq *= _DCT_KEEP_MASK  # 低周波側だけ残し、高周波成分を0にする(ここが圧縮)。
 
     # 逆DCT: 空間領域 = 基底行列の転置 @ 周波数領域 @ 基底行列。
@@ -201,7 +245,9 @@ def dct_degrade(rgb: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     # (ブロック行, ブロック内の行, ブロック列, ブロック内の列, チャンネル)に戻してから結合する。
     restored = restored.transpose(0, 3, 1, 4, 2).reshape(padded.shape)
     # 間引きで元の0〜1の範囲をわずかにはみ出すことがあるためクリップする。
-    return np.clip(restored[:height, :width], 0.0, 1.0)
+    return DctResult(
+        np.clip(restored[:height, :width], 0.0, 1.0), discarded_energy, ac_energy
+    )
 
 
 def _circle_mask(height: int, width: int, radius: float) -> npt.NDArray[np.bool_]:
@@ -226,6 +272,27 @@ def eroded_center_circle_mask(height: int, width: int, erosion_px: float) -> npt
     マスクの境界は輝度が急変して偽のエッジになるため、エッジ密度を求める際はこちらを使う。"""
     radius = min(height, width) * SUBJECT_RADIUS_RATIO - erosion_px
     return _circle_mask(height, width, max(radius, 0.0))
+
+
+def block_center_circle_mask(height: int, width: int, block_size: int) -> npt.NDArray[np.bool_]:
+    """center_circle_maskと同じ円を、DCTブロック単位に落とした版。
+    ブロックの中心が円の内側にあるブロックだけTrueにする。DCT係数はブロック単位
+    でしか得られないため、係数から求める特徴量にはこちらのマスクを使う。"""
+    blocks_h = -(-height // block_size)
+    blocks_w = -(-width // block_size)
+
+    # 各ブロックの中心を、元画像の画素座標で表す。
+    block_center_rows = np.arange(blocks_h) * block_size + (block_size - 1) / 2.0
+    block_center_cols = np.arange(blocks_w) * block_size + (block_size - 1) / 2.0
+
+    center_row = (height - 1) / 2.0
+    center_col = (width - 1) / 2.0
+    radius = min(height, width) * SUBJECT_RADIUS_RATIO
+
+    distance_sq = (block_center_rows[:, np.newaxis] - center_row) ** 2 + (
+        block_center_cols[np.newaxis, :] - center_col
+    ) ** 2
+    return distance_sq <= radius**2
 
 
 def _convolve3x3(field: npt.NDArray[np.float64], kernel: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -262,12 +329,15 @@ def _apply_rarity(base_value: float, rarity: int) -> int:
     return int(min(round(corrected), STAT_MAX_VALUE))
 
 
-def normalize_stats(edge_density: float, y_variance: float, saturation: float) -> tuple[float, float, float]:
-    """生の特徴量(edge_density, y_variance, saturation)を、レア度補正前の
-    0〜100の値(attack, endurance, magic)に正規化する。EDGE_MAX・VAR_MAX・SAT_MAXの
+def normalize_stats(
+    edge_density: float, detail_loss_ratio: float, saturation: float
+) -> tuple[float, float, float]:
+    """生の特徴量(edge_density, detail_loss_ratio, saturation)を、レア度補正前の
+    0〜100の値(attack, endurance, magic)に正規化する。EDGE_MAX・LOSS_MAX・SAT_MAXの
     調整結果を確認するデバッグ用途と、appraise()本体の両方から呼ばれる。"""
     attack = _normalize_to_100(edge_density, EDGE_MAX)
-    endurance = 100.0 * (1.0 - float(np.clip(y_variance / VAR_MAX, 0.0, 1.0)))
+    # 細部の損失が小さい(表面がなめらかで高周波成分が少ない)ほど頑丈とみなす。
+    endurance = 100.0 - _normalize_to_100(detail_loss_ratio, LOSS_MAX)
     magic = _normalize_to_100(saturation, SAT_MAX)
     return attack, endurance, magic
 
@@ -351,7 +421,8 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     """写真のバイト列から、レア度・属性と、その根拠となる数値を求める。"""
     rgb = load_rgb_array(image_bytes)
     # 高周波の細部をあらかじめ間引いた画像を鑑定対象にする(JPEG相当の劣化)。
-    rgb = dct_degrade(rgb)
+    # 間引きで捨てた成分のエネルギーは耐久の算出に使う。
+    rgb, discarded_energy, ac_energy = dct_degrade(rgb)
     height, width = rgb.shape[:2]
 
     # 全画素をまとめてYIQへ変換する(画素ごとのループは書かず、行列積で一括処理する)。
@@ -391,11 +462,23 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     edge_mask = eroded_center_circle_mask(height, width, EDGE_MASK_EROSION_PX)
     edge_density = float(edge_magnitude[edge_mask].mean())
 
-    # ❷ 耐久: Y成分の分散の低さ。表面が均一(分散が小さい)なほど頑丈とみなす。
-    y_variance = float(luminance[subject_mask].var())
+    # ❷ 耐久: DCTで捨てた高周波成分の割合の低さ。表面が均一なほど頑丈とみなす。
+    # 領域全体の分散を使うと、影や照明のむらのような大きなスケールの明暗差まで
+    # 拾ってしまい「影があるだけで脆い」という判定になっていた。ブロック単位の
+    # DCT係数なら、そうした緩やかな明暗差は各ブロックのDC成分に吸収されるため、
+    # 表面そのもののざらつきだけを見られる。
+    block_mask = block_center_circle_mask(height, width, DCT_BLOCK_SIZE)
+    subject_ac_energy = float(ac_energy[block_mask].sum())
+    if subject_ac_energy / max(int(block_mask.sum()), 1) < MIN_AC_ENERGY_PER_BLOCK:
+        # ほぼ平坦な領域は比が当てにならないため、最もなめらかとみなす。
+        detail_loss_ratio = 0.0
+    else:
+        detail_loss_ratio = float(discarded_energy[block_mask].sum()) / subject_ac_energy
 
     # ❸ 魔力: 彩度。属性判定で求めたsaturationをそのまま再利用する。
-    attack_base, endurance_base, magic_base = normalize_stats(edge_density, y_variance, saturation)
+    attack_base, endurance_base, magic_base = normalize_stats(
+        edge_density, detail_loss_ratio, saturation
+    )
 
     return AppraisalResult(
         rarity=rarity,
@@ -408,7 +491,7 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
         endurance=_apply_rarity(endurance_base, rarity),
         magic=_apply_rarity(magic_base, rarity),
         edge_density=edge_density,
-        y_variance=y_variance,
+        detail_loss_ratio=detail_loss_ratio,
         y=mean_luminance,
         i=mean_in_phase,
         q=mean_quadrature,
