@@ -16,18 +16,22 @@
   border-radius: 22px;
   box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7);
 }
-.relic-card[data-tier="一般資料級"] {
+.relic-card[data-tier="カス"] {
   background: linear-gradient(155deg, #9c8a63, #4a3f2c);
 }
-.relic-card[data-tier="貴重資料級"] {
+.relic-card[data-tier="ブロンズ"] {
+  background: linear-gradient(155deg, #e0a875, #cd7f32 45%, #6b3e14);
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 18px rgba(205, 127, 50, 0.28);
+}
+.relic-card[data-tier="シルバー"] {
   background: linear-gradient(155deg, #eef0f2, #b9bfc6 45%, #6e747a);
   box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 18px rgba(200, 210, 220, 0.22);
 }
-.relic-card[data-tier="重要文化財級"] {
+.relic-card[data-tier="ゴールド"] {
   background: linear-gradient(155deg, #fff3d0, #f1d48d 40%, #a9812f 75%, #f1d48d);
   box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 28px rgba(241, 212, 141, 0.32);
 }
-.relic-card[data-tier="国宝級"] {
+.relic-card[data-tier="レジェンド"] {
   background: linear-gradient(155deg, #fff3d0 0%, #ffb3d9 16%, #b3ffd9 32%, #b3d9ff 48%, #d9b3ff 64%, #fff3d0 80%, #a9812f 100%);
   box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 40px rgba(241, 212, 141, 0.4);
 }
@@ -374,7 +378,6 @@
 .relic-card-face .relic-card-footer { margin-top: auto; }
 
 /* ---- カード外の補足情報 ---- */
-.relic-note { color: var(--relic-ink-dim); margin: 24px 0 4px; font-size: 14px; text-align: center; }
 .relic-save-status { margin: 8px 0 0; color: var(--relic-gold); font-size: 14px; text-align: center; }
 .relic-save-error { margin: 8px 0 0; color: #ffb4a8; font-size: 14px; text-align: center; }
 .relic-analysis { color: var(--relic-ink-dim); margin: 0 0 24px; font-size: 12px; opacity: 0.8; text-align: center; }

@@ -56,7 +56,6 @@ export default function ResultPage() {
       )}
       <RelicCard evaluation={evaluation} photo={state.photo} flippable />
 
-      <p className="relic-note">この鑑定は写真をもとにAIが作った架空の伝説である...</p>
       {state.collectionSaved && <p className="relic-save-status">図鑑に保存しました。</p>}
       {state.collectionSaveError && <p className="relic-save-error" role="alert">{state.collectionSaveError}</p>}
       {deleteError && <p className="relic-save-error" role="alert">{deleteError}</p>}
