@@ -212,3 +212,18 @@
     animation: none !important;
   }
 }
+
+.dig-reveal-result {
+  font: inherit;
+  padding: 10px 22px;
+  color: #100e0b;
+  background: var(--relic-gold);
+  border: 1px solid var(--relic-gold);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.dig-reveal-result:hover,
+.dig-reveal-result:focus-visible {
+  background: #ffe6a8;
+  box-shadow: 0 0 16px rgba(241, 212, 141, 0.5);
+}

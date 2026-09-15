@@ -4,7 +4,7 @@ import "./DigReveal.css";
 
 const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
 
-const DigReveal = forwardRef(function DigReveal({ evaluation, onComplete, onCancel }, ref) {
+const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = true, onReveal, onComplete, onCancel }, ref) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
   // 実際の鑑定結果(evaluation)が届くまでは "inspecting" のまま待機し続ける。
@@ -19,7 +19,7 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, onComplete, onCanc
   };
 
   useEffect(() => {
-    if (!evaluation) return;
+    if (!evaluation || !revealStarted) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
@@ -49,17 +49,17 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, onComplete, onCanc
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evaluation]);
+  }, [evaluation, revealStarted]);
 
   // スキップボタンはCameraPage側(Homeボタンと対称の位置)に表示するため、
   // 実行だけをrefごしに外部へ公開する
   useImperativeHandle(ref, () => ({
     skip: () => {
       // 通信待ち中(evaluation未到着)はスキップ対象がまだ無いので何もしない
-      if (!evaluation) return;
+      if (!evaluation || !revealStarted) return;
       finish();
     },
-  }), [evaluation]);
+  }), [evaluation, revealStarted]);
 
   return (
     <div className="dig-reveal" data-phase={phase}>
@@ -69,7 +69,12 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, onComplete, onCanc
       <div className="dig-reveal-inspect">
         <div className="dig-reveal-scanline" aria-hidden="true" />
         <span className="dig-pick" aria-hidden="true">🔍</span>
-        <p className="dig-label">鑑定中...</p>
+        <p className="dig-label">{evaluation ? "鑑定完了" : "鑑定中..."}</p>
+        {evaluation && !revealStarted && (
+          <button type="button" className="dig-reveal-result" onClick={onReveal}>
+            結果を表示
+          </button>
+        )}
         {onCancel && (
           <button type="button" className="dig-reveal-cancel" onClick={onCancel}>
             キャンセル

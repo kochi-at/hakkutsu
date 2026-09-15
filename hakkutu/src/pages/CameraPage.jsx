@@ -12,6 +12,7 @@ function CameraPage({ onBack }) {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
   const [evaluationForReveal, setEvaluationForReveal] = useState(null);
+  const [revealStarted, setRevealStarted] = useState(false);
   const abortControllerRef = useRef(null);
   const saveStartedRef = useRef(false);
   const digRevealRef = useRef(null);
@@ -19,6 +20,7 @@ function CameraPage({ onBack }) {
 
   const handleCapture = (imageData) => {
     saveStartedRef.current = false;
+    setRevealStarted(false);
     setPhoto(imageData);
   };
 
@@ -69,6 +71,7 @@ function CameraPage({ onBack }) {
     abortControllerRef.current = controller;
     setIsSending(true);
     setError("");
+    setRevealStarted(false);
     setEvaluationForReveal(null);
     const data = await sendPhoto(controller.signal);
     setIsSending(false);
@@ -106,6 +109,7 @@ function CameraPage({ onBack }) {
     abortControllerRef.current?.abort();
     setIsSending(false);
     setEvaluationForReveal(null);
+    setRevealStarted(false);
     saveStartedRef.current = false;
     setError("");
     setPhoto(null);
@@ -128,7 +132,7 @@ function CameraPage({ onBack }) {
         </svg>
       </button>
 
-      {evaluationForReveal && (
+      {evaluationForReveal && revealStarted && (
         <button
           type="button"
           className="camera-page-skip-button"
@@ -176,6 +180,8 @@ function CameraPage({ onBack }) {
                 <DigReveal
                   ref={digRevealRef}
                   evaluation={evaluationForReveal}
+                  revealStarted={revealStarted}
+                  onReveal={() => setRevealStarted(true)}
                   onComplete={handleRevealComplete}
                   onCancel={handleCancelReveal}
                 />
