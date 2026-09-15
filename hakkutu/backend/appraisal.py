@@ -52,11 +52,30 @@ ELEMENT_SECTORS: tuple[tuple[float, str], ...] = (
     (360.0, "雷"),
 )
 
+# --- 属性判定(色相クラスタリング)用の定数 -----------------------------
+# 対象領域の画素をI・Q平面上でk-meansにかけ、最も「彩度の合計」が大きい
+# クラスタの色相を属性判定に使う。単純平均だと多色の物体で彩度が打ち消し
+# 合って色相が不安定になるため、支配的な色のクラスタだけを見る。
+ELEMENT_KMEANS_CLUSTERS: int = 3
+
+# k-means++初期化に使う乱数シード。決定的な鑑定結果にするため固定する。
+ELEMENT_KMEANS_SEED: int = 0
+
+ELEMENT_KMEANS_MAX_ITER: int = 20
+
+# 全クラスタの彩度合計がこの値未満(≒対象領域がほぼ無彩色)の場合は、
+# クラスタ結果を信頼せず対象領域全画素の平均色相にフォールバックする。
+ELEMENT_KMEANS_MIN_WEIGHT: float = 1e-6
+
 # --- ステータス算出用の定数 -------------------------------------------
 # 攻撃力(エッジ密度)・耐久(分散)・魔力(彩度)は、生の特徴量をこれらの値で割って
-# 0〜1に正規化してから100倍する。backend/uploads の実写真28枚をappraise()に通した
-# 実測値のp90(上位10%だけが100に張り付く水準)に合わせている。
-EDGE_MAX: float = 0.181
+# 0〜1に正規化してから100倍する。VAR_MAX・SAT_MAXはbackend/uploadsの実写真をp90基準で
+# 調整した値。EDGE_MAXだけはp90に合わせると、実際の写真のエッジ密度分布が
+# (背景のノイズやJPEG劣化により)他の特徴量よりも中央値からp90までの幅が狭く、
+# 「平均的な写真でも攻撃力の基礎値が70〜80に達する」→レア度補正(0.62〜1.10倍)後も
+# 常に攻撃力だけが耐久・魔力より頭一つ高くなる、という偏りが生じていた。
+# そのためEDGE_MAXだけは中央値が基礎値50付近になるよう(中央値÷0.5)で再調整している。
+EDGE_MAX: float = 0.27
 VAR_MAX: float = 0.064
 SAT_MAX: float = 0.062
 
@@ -69,7 +88,10 @@ RARITY_BASE_MULTIPLIER: float = 0.5
 RARITY_STEP_MULTIPLIER: float = 0.12
 
 # ステータスの上限値(補正後にこの値でクランプする)。
-STAT_MAX_VALUE: int = 110
+# フロントエンドのステータスバーは0〜100%の前提で描画しており、これを100より
+# 大きくするとバーは100%止まりなのに数値表示だけ100を超えて表示され、
+# 「攻撃力が高すぎる」ように見えるバグになる。
+STAT_MAX_VALUE: int = 100
 
 # Sobelフィルタのカーネル。x方向・y方向それぞれの勾配を求める。
 _SOBEL_X: npt.NDArray[np.float64] = np.array(
@@ -85,7 +107,7 @@ class AppraisalResult(BaseModel):
     element: str
     luminance_ratio: float
     saturation: float
-    # 属性を決めた色相の角度(度)。閾値調整のために残す。
+    # 属性を決めた色相の角度(度)。k-meansで求めた支配的クラスタの色相。
     hue_angle: float
     attack: int = Field(ge=0, le=STAT_MAX_VALUE)
     endurance: int = Field(ge=0, le=STAT_MAX_VALUE)
@@ -256,6 +278,67 @@ def _to_rarity(luminance_ratio: float) -> int:
     return int(np.searchsorted(RARITY_THRESHOLDS, luminance_ratio, side="right")) + 1
 
 
+def _kmeans_2d(
+    points: npt.NDArray[np.float64], k: int, seed: int, max_iter: int
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.intp]]:
+    """2次元の点群(n, 2)をk個のクラスタに分ける。k-means++で初期化し、
+    重心の移動が止まる(またはmax_iterに達する)まで繰り返す。
+    戻り値は(クラスタ中心(k, 2), 各点の所属クラスタ番号(n,))。"""
+    rng = np.random.default_rng(seed)
+    n = points.shape[0]
+
+    # k-means++: 既存の中心から遠い点ほど次の中心に選ばれやすくする。
+    centers = np.empty((k, 2), dtype=np.float64)
+    centers[0] = points[rng.integers(n)]
+    closest_dist_sq = np.sum((points - centers[0]) ** 2, axis=1)
+    for i in range(1, k):
+        total = closest_dist_sq.sum()
+        # 全点が既存の中心と同じ位置(距離0)ならランダムに選ぶ。
+        probabilities = closest_dist_sq / total if total > 0.0 else None
+        centers[i] = points[rng.choice(n, p=probabilities)]
+        closest_dist_sq = np.minimum(closest_dist_sq, np.sum((points - centers[i]) ** 2, axis=1))
+
+    labels = np.full(n, -1, dtype=np.intp)
+    for _ in range(max_iter):
+        distances = np.linalg.norm(points[:, np.newaxis, :] - centers[np.newaxis, :, :], axis=2)
+        new_labels = np.argmin(distances, axis=1)
+        if np.array_equal(new_labels, labels):
+            break
+        labels = new_labels
+        for cluster in range(k):
+            members = labels == cluster
+            if members.any():
+                centers[cluster] = points[members].mean(axis=0)
+
+    return centers, labels
+
+
+def _dominant_hue_angle(in_phase: npt.NDArray[np.float64], quadrature: npt.NDArray[np.float64]) -> float:
+    """対象領域のI・Q画素群をk-meansでクラスタリングし、最も彩度の合計が
+    大きいクラスタの色相角度(度)を返す。単純平均と違い、多色の物体でも
+    「一番目立つ色」を色相判定に使えるようにするための処理。"""
+    points = np.stack([in_phase, quadrature], axis=1)
+    fallback_mean = points.mean(axis=0)
+
+    k = min(ELEMENT_KMEANS_CLUSTERS, points.shape[0])
+    if k < 2:
+        return float(np.degrees(np.arctan2(fallback_mean[1], fallback_mean[0]))) % 360.0
+
+    centers, labels = _kmeans_2d(points, k, ELEMENT_KMEANS_SEED, ELEMENT_KMEANS_MAX_ITER)
+
+    saturations = np.hypot(points[:, 0], points[:, 1])
+    cluster_weights = np.array([saturations[labels == cluster].sum() for cluster in range(k)])
+    dominant_cluster = int(np.argmax(cluster_weights))
+
+    if cluster_weights[dominant_cluster] < ELEMENT_KMEANS_MIN_WEIGHT:
+        # 対象領域全体がほぼ無彩色で、どのクラスタの色相も当てにならない場合。
+        center_i, center_q = fallback_mean
+    else:
+        center_i, center_q = centers[dominant_cluster]
+
+    return float(np.degrees(np.arctan2(center_q, center_i))) % 360.0
+
+
 def _to_element(hue_angle: float) -> str:
     """色相の角度から属性を決める。hue_angleは%360.0されているため必ずいずれかの区間に入る。"""
     for upper_bound, element in ELEMENT_SECTORS:
@@ -291,8 +374,10 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     mean_quadrature = float(quadrature[subject_mask].mean())
     saturation = float(np.hypot(mean_in_phase, mean_quadrature))
 
-    # atan2は-180〜180度を返すので、0〜360度に直してから区間に割り当てる。
-    hue_angle = float(np.degrees(np.arctan2(mean_quadrature, mean_in_phase))) % 360.0
+    # 属性判定用の色相は、単純平均ではなく対象領域の画素をk-meansでクラスタ
+    # リングし、最も彩度の合計が大きい(=一番目立つ色の)クラスタから求める。
+    # 単純平均だと多色の物体で色同士が打ち消し合い、色相が不安定になるため。
+    hue_angle = _dominant_hue_angle(in_phase[subject_mask], quadrature[subject_mask])
 
     rarity = _to_rarity(luminance_ratio)
 

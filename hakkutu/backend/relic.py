@@ -121,7 +121,7 @@ def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResul
                                  f"鑑定機の計測結果は、レア度{appraisal.rarity}(5段階)、"
                                  f"属性「{appraisal.element}」、"
                                  f"攻撃{appraisal.attack}・耐久{appraisal.endurance}・魔力{appraisal.magic}"
-                                 "(いずれも0〜110)です。"},
+                                 "(いずれも0〜100)です。"},
                         {"inlineData": {"mimeType": content_type,
                                         "data": base64.b64encode(contents).decode("ascii")}},
                     ]}],
