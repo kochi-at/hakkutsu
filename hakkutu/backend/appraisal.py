@@ -68,6 +68,11 @@ ELEMENT_KMEANS_MAX_ITER: int = 20
 # クラスタ結果を信頼せず対象領域全画素の平均色相にフォールバックする。
 ELEMENT_KMEANS_MIN_WEIGHT: float = 1e-6
 
+# カード裏面の色相図に描くため、対象領域から間引いて返す画素の数。
+# 間引きは一様なランダム抽出(彩度の高い画素を優先しない)にして、写真の実際の
+# 色の分布を歪めずに見せる。シードはELEMENT_KMEANS_SEEDを使い回して決定的にする。
+COLOR_MAP_POINT_COUNT: int = 240
+
 # --- ステータス算出用の定数 -------------------------------------------
 # 攻撃力(エッジ密度)・魔力(彩度)は、生の特徴量をこれらの値で割って0〜1に正規化
 # してから100倍する。SAT_MAXはbackend/uploadsの実写真をp90基準で調整した値。
@@ -117,6 +122,25 @@ _SOBEL_Y: npt.NDArray[np.float64] = np.array(
 )
 
 
+class HueCluster(BaseModel):
+    """属性判定に使ったk-meansクラスタ1つ分。カード裏面の色相図に描く。"""
+
+    i: float
+    q: float
+    # クラスタの彩度合計が全クラスタに占める割合(全クラスタで合計1)。
+    share: float
+    # 属性を決めたクラスタならTrue。
+    dominant: bool
+
+
+class ColorMap(BaseModel):
+    """I・Q平面上の色の分布。属性がなぜその値になったかをフロントで図示するために返す。"""
+
+    # 対象領域から間引いた画素。(I, Q, 劣化後画像での色"#rrggbb")。
+    points: list[tuple[float, float, str]]
+    clusters: list[HueCluster]
+
+
 class AppraisalResult(BaseModel):
     rarity: int = Field(ge=1, le=5)
     element: str
@@ -136,6 +160,7 @@ class AppraisalResult(BaseModel):
     y: float
     i: float
     q: float
+    color_map: ColorMap
 
 
 class AppraisalError(Exception):
@@ -383,16 +408,30 @@ def _kmeans_2d(
     return centers, labels
 
 
-def _dominant_hue_angle(in_phase: npt.NDArray[np.float64], quadrature: npt.NDArray[np.float64]) -> float:
+def _hue_degrees(in_phase: float, quadrature: float) -> float:
+    """I・Q平面上の点の色相角度(0〜360度)。atan2の-180〜180度を0〜360度に直す。"""
+    return float(np.degrees(np.arctan2(quadrature, in_phase))) % 360.0
+
+
+class _HueAnalysis(NamedTuple):
+    hue_angle: float
+    clusters: list[HueCluster]
+
+
+def _analyze_hue(in_phase: npt.NDArray[np.float64], quadrature: npt.NDArray[np.float64]) -> _HueAnalysis:
     """対象領域のI・Q画素群をk-meansでクラスタリングし、最も彩度の合計が
-    大きいクラスタの色相角度(度)を返す。単純平均と違い、多色の物体でも
-    「一番目立つ色」を色相判定に使えるようにするための処理。"""
+    大きいクラスタの色相角度と、図示用の全クラスタの情報を返す。単純平均と違い、
+    多色の物体でも「一番目立つ色」を色相判定に使えるようにするための処理。"""
     points = np.stack([in_phase, quadrature], axis=1)
     fallback_mean = points.mean(axis=0)
 
     k = min(ELEMENT_KMEANS_CLUSTERS, points.shape[0])
     if k < 2:
-        return float(np.degrees(np.arctan2(fallback_mean[1], fallback_mean[0]))) % 360.0
+        center_i, center_q = (float(value) for value in fallback_mean)
+        return _HueAnalysis(
+            _hue_degrees(center_i, center_q),
+            [HueCluster(i=center_i, q=center_q, share=1.0, dominant=True)],
+        )
 
     centers, labels = _kmeans_2d(points, k, ELEMENT_KMEANS_SEED, ELEMENT_KMEANS_MAX_ITER)
 
@@ -406,7 +445,39 @@ def _dominant_hue_angle(in_phase: npt.NDArray[np.float64], quadrature: npt.NDArr
     else:
         center_i, center_q = centers[dominant_cluster]
 
-    return float(np.degrees(np.arctan2(center_q, center_i))) % 360.0
+    total_weight = float(cluster_weights.sum())
+    shares = cluster_weights / total_weight if total_weight > 0.0 else np.full(k, 1.0 / k)
+    clusters = [
+        HueCluster(
+            i=round(float(centers[cluster, 0]), 4),
+            q=round(float(centers[cluster, 1]), 4),
+            share=round(float(shares[cluster]), 4),
+            dominant=cluster == dominant_cluster,
+        )
+        for cluster in range(k)
+    ]
+    return _HueAnalysis(_hue_degrees(float(center_i), float(center_q)), clusters)
+
+
+def _sample_color_points(
+    in_phase: npt.NDArray[np.float64],
+    quadrature: npt.NDArray[np.float64],
+    colors: npt.NDArray[np.float64],
+) -> list[tuple[float, float, str]]:
+    """対象領域の画素からCOLOR_MAP_POINT_COUNT個を一様に間引き、(I, Q, "#rrggbb")にする。
+    colorsは同じ画素の0〜1のRGB(n, 3)。"""
+    count = in_phase.shape[0]
+    rng = np.random.default_rng(ELEMENT_KMEANS_SEED)
+    indices = np.sort(rng.choice(count, size=min(COLOR_MAP_POINT_COUNT, count), replace=False))
+    rgb255 = np.rint(colors[indices] * 255.0).astype(int)
+    return [
+        (
+            round(float(in_phase[index]), 3),
+            round(float(quadrature[index]), 3),
+            f"#{red:02x}{green:02x}{blue:02x}",
+        )
+        for index, (red, green, blue) in zip(indices, rgb255)
+    ]
 
 
 def _to_element(hue_angle: float) -> str:
@@ -448,7 +519,14 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     # 属性判定用の色相は、単純平均ではなく対象領域の画素をk-meansでクラスタ
     # リングし、最も彩度の合計が大きい(=一番目立つ色の)クラスタから求める。
     # 単純平均だと多色の物体で色同士が打ち消し合い、色相が不安定になるため。
-    hue_angle = _dominant_hue_angle(in_phase[subject_mask], quadrature[subject_mask])
+    hue = _analyze_hue(in_phase[subject_mask], quadrature[subject_mask])
+    hue_angle = hue.hue_angle
+    # 属性の根拠をカード裏面で図示するため、クラスタと間引いた画素も返す。
+    # 点の色は鑑定に使った劣化後の画像から取る。
+    color_map = ColorMap(
+        points=_sample_color_points(in_phase[subject_mask], quadrature[subject_mask], rgb[subject_mask]),
+        clusters=hue.clusters,
+    )
 
     rarity = _to_rarity(luminance_ratio)
 
@@ -495,4 +573,5 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
         y=mean_luminance,
         i=mean_in_phase,
         q=mean_quadrature,
+        color_map=color_map,
     )

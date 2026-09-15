@@ -36,15 +36,18 @@ export default function ResultPage() {
           <span aria-hidden="true">←</span> 図鑑に戻る
         </Link>
       )}
-      <RelicCard evaluation={evaluation} photo={state.photo} />
+      <RelicCard evaluation={evaluation} photo={state.photo} flippable />
 
       <p className="relic-note">この鑑定は写真をもとにAIが作った架空の伝説である...</p>
       {state.collectionSaved && <p className="relic-save-status">図鑑に保存しました。</p>}
       {state.collectionSaveError && <p className="relic-save-error" role="alert">{state.collectionSaveError}</p>}
       {deleteError && <p className="relic-save-error" role="alert">{deleteError}</p>}
-      <p className="relic-analysis">
-        Y {evaluation.analysis.y.toFixed(2)} / I {evaluation.analysis.i.toFixed(2)} / Q {evaluation.analysis.q.toFixed(2)} / θ {Math.round(evaluation.analysis.hueAngle)}°
-      </p>
+      {/* 色相図がある遺物は、同じ数値をカード裏面に表示している。 */}
+      {!evaluation.colorMap && (
+        <p className="relic-analysis">
+          Y {evaluation.analysis.y.toFixed(2)} / I {evaluation.analysis.i.toFixed(2)} / Q {evaluation.analysis.q.toFixed(2)} / θ {Math.round(evaluation.analysis.hueAngle)}°
+        </p>
+      )}
       <nav>
         <Link className="relic-nav-primary" to="/CameraPage">別の写真を鑑定する</Link>
         <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>

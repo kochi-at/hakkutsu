@@ -7,7 +7,7 @@ import httpx
 from fastapi import HTTPException
 
 import relic
-from appraisal import AppraisalResult
+from appraisal import AppraisalResult, ColorMap, HueCluster
 
 
 LORE = {
@@ -31,15 +31,24 @@ LORE = {
         {"text": "。", "reading": ""},
     ],
 }
+COLOR_MAP = ColorMap(
+    points=[(0.1, 0.15, "#aa5533")],
+    clusters=[HueCluster(i=0.1, q=0.15, share=1.0, dominant=True)],
+)
 APPRAISAL = AppraisalResult(rarity=4, element="火", luminance_ratio=1.1, saturation=0.2,
                             hue_angle=20.0, attack=60, endurance=70, magic=50,
-                            edge_density=0.05, detail_loss_ratio=0.2, y=0.5, i=0.1, q=0.15)
+                            edge_density=0.05, detail_loss_ratio=0.2, y=0.5, i=0.1, q=0.15,
+                            color_map=COLOR_MAP)
 EVALUATION = {
     **LORE,
     "rarity": 4,
     "element": "火",
     "stats": {"attack": 60, "endurance": 70, "magic": 50},
     "analysis": {"y": 0.5, "i": 0.1, "q": 0.15, "saturation": 0.2, "hueAngle": 20.0},
+    "colorMap": {
+        "points": [(0.1, 0.15, "#aa5533")],
+        "clusters": [{"i": 0.1, "q": 0.15, "share": 1.0, "dominant": True}],
+    },
 }
 
 
