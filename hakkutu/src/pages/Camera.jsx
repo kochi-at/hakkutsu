@@ -7,39 +7,64 @@ function Camera({ onCapture }) {
   const fileInputRef = useRef(null);
 
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    startCamera();
-
-    return () => {
-      stopCamera();
-    };
-  }, []);
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false,
-      });
-
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (err) {
-      console.error(err);
-      setError("カメラを起動できませんでした。");
-    }
-  };
+  const [facingMode, setFacingMode] = useState("environment");
+  const [canSwitchCamera, setCanSwitchCamera] = useState(false);
 
   const stopCamera = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
+      streamRef.current = null;
     }
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    const startCamera = async () => {
+      setError("");
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+          audio: false,
+        });
+
+        if (!active) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter((device) => device.kind === "videoinput");
+        if (active) {
+          setCanSwitchCamera(cameras.length > 1);
+        }
+      } catch (err) {
+        console.error(err);
+        if (active) {
+          setError("カメラを起動できませんでした。");
+        }
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      active = false;
+      stopCamera();
+    };
+  }, [facingMode]);
+
+  const switchCamera = () => {
+    setFacingMode((current) => current === "environment" ? "user" : "environment");
   };
 
 const takePhoto = () => {
@@ -180,6 +205,12 @@ const handleFileSelect = (event) => {
             >
               ファイルから選択
             </button>
+
+            {canSwitchCamera && (
+              <button type="button" onClick={switchCamera}>
+                {facingMode === "environment" ? "内カメラに切り替え" : "外カメラに切り替え"}
+              </button>
+            )}
           </div>
 
           <input
