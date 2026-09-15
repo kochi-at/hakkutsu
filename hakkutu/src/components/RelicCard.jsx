@@ -12,10 +12,11 @@ const ELEMENT_ICON_PATHS = {
 };
 
 const TIER_SPARKLE = {
-  一般資料級: "none",
-  貴重資料級: "sheen",
-  重要文化財級: "sheen",
-  国宝級: "holo",
+  カス: "none",
+  ブロンズ: "none",
+  シルバー: "sheen",
+  ゴールド: "sheen",
+  レジェンド: "holo",
 };
 
 function RubyText({ parts, fallback }) {

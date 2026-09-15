@@ -20,12 +20,13 @@ const SECTORS = [
 
 const TICK_DEGREES = Array.from({ length: 24 }, (_, index) => index * 15);
 
-// 粒の塗り方はカード外枠の格の色に揃える。★1だけは表面の写真と同じく白黒にする。
+// 粒の塗り方はカード外枠の格の色に揃える。カス級は表面の写真と同じく白黒にする。
 const TIER_DOT_STYLE = {
-  一般資料級: "bronze",
-  貴重資料級: "silver",
-  重要文化財級: "gold",
-  国宝級: "rainbow",
+  カス: "gray",
+  ブロンズ: "bronze",
+  シルバー: "silver",
+  ゴールド: "gold",
+  レジェンド: "rainbow",
 };
 
 // [暗い画素の色, 明るい画素の色]。元の画素の明るさで間を補間し、単色でも濃淡を残す。
@@ -37,7 +38,7 @@ const METAL_PALETTES = {
 };
 
 function dotStyleFor(rarity) {
-  return rarity === 1 ? "gray" : TIER_DOT_STYLE[digTier(rarity)];
+  return TIER_DOT_STYLE[digTier(rarity)];
 }
 
 function polar(radius, degrees) {
