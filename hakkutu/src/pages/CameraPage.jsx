@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Camera from "./Camera";
 import "./CameraPage.css";
 
+const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+
 function CameraPage({ onBack }) {
   const [photo, setPhoto] = useState(null);
   const [isSending, setIsSending] = useState(false);
@@ -28,7 +30,7 @@ function CameraPage({ onBack }) {
       formData.append("file", blob, "photo.png");
 
       // FastAPIへ送信
-      const result = await fetch("http://localhost:8000/upload", {
+      const result = await fetch(`${API_URL}/upload`, {
         method: "POST",
         body: formData,
       });
