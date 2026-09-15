@@ -14,6 +14,7 @@ function CameraPage({ onBack }) {
   const [evaluationForReveal, setEvaluationForReveal] = useState(null);
   const abortControllerRef = useRef(null);
   const saveStartedRef = useRef(false);
+  const digRevealRef = useRef(null);
   const navigate = useNavigate();
 
   const handleCapture = (imageData) => {
@@ -127,6 +128,18 @@ function CameraPage({ onBack }) {
         </svg>
       </button>
 
+      {evaluationForReveal && (
+        <button
+          type="button"
+          className="camera-page-skip-button"
+          onClick={() => digRevealRef.current?.skip()}
+          aria-label="演出をスキップ"
+          title="演出をスキップ"
+        >
+          スキップ
+        </button>
+      )}
+
       {!photo ? (
         <div
           style={{
@@ -161,6 +174,7 @@ function CameraPage({ onBack }) {
             {(isSending || evaluationForReveal) && (
               <div className="camera-dig-overlay">
                 <DigReveal
+                  ref={digRevealRef}
                   evaluation={evaluationForReveal}
                   onComplete={handleRevealComplete}
                   onCancel={handleCancelReveal}

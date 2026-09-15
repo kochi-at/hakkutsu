@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { digTier } from "./digTier";
 import "./DigReveal.css";
 
 const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
 
-export default function DigReveal({ evaluation, onComplete, onCancel }) {
+const DigReveal = forwardRef(function DigReveal({ evaluation, onComplete, onCancel }, ref) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
   // 実際の鑑定結果(evaluation)が届くまでは "inspecting" のまま待機し続ける。
@@ -51,19 +51,18 @@ export default function DigReveal({ evaluation, onComplete, onCancel }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluation]);
 
-  const handleSkip = () => {
-    // 通信待ち中(evaluation未到着)はスキップ対象がまだ無いので何もしない
-    if (!evaluation) return;
-    finish();
-  };
+  // スキップボタンはCameraPage側(Homeボタンと対称の位置)に表示するため、
+  // 実行だけをrefごしに外部へ公開する
+  useImperativeHandle(ref, () => ({
+    skip: () => {
+      // 通信待ち中(evaluation未到着)はスキップ対象がまだ無いので何もしない
+      if (!evaluation) return;
+      finish();
+    },
+  }), [evaluation]);
 
   return (
     <div className="dig-reveal" data-phase={phase}>
-      {evaluation && (
-        <button type="button" className="dig-reveal-skip" onClick={handleSkip}>
-          スキップ
-        </button>
-      )}
       <div className="dig-reveal-rays" aria-hidden="true" />
       <div className="dig-reveal-flash" aria-hidden="true" />
 
@@ -88,7 +87,9 @@ export default function DigReveal({ evaluation, onComplete, onCancel }) {
       </div>
     </div>
   );
-}
+});
+
+export default DigReveal;
 
 function animateRarity(target, duration, numberRef, starsRef) {
   return new Promise((resolve) => {
