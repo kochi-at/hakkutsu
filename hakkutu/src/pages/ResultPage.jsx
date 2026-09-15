@@ -29,6 +29,7 @@ export default function ResultPage() {
         <>
           <p className="relic-eyebrow">伝説の聖遺物 鑑定書</p>
           <h1>{evaluation.name}</h1>
+          <p className="relic-name-reading">{evaluation.name_reading}</p>
           {state.photo && <img className="relic-photo" src={state.photo} alt="鑑定した写真" />}
           <p className="relic-score">
             <span
@@ -51,6 +52,7 @@ export default function ResultPage() {
           <section>
             <h2>語り継がれる伝説</h2>
             <p>{evaluation.lore}</p>
+            <p className="relic-lore-reading">よみ：{evaluation.lore_reading}</p>
           </section>
           <section className="relic-stats">
             <h2>能力値</h2>
