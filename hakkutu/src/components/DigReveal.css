@@ -105,24 +105,28 @@
   pointer-events: none;
 }
 
-.dig-reveal-scanline {
-  position: relative;
-  width: 120px;
-  height: 2px;
+.dig-zigzag {
+  width: 56px;
+  height: 56px;
+  overflow: visible;
 }
-.dig-reveal-scanline::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, var(--relic-gold), transparent);
-  opacity: 0.55;
-  animation: dig-scanline-pulse 1.6s ease-in-out infinite;
+.dig-zigzag-frame {
+  fill: none;
+  stroke: var(--relic-line);
+  stroke-width: 1.5;
 }
-
-.dig-pick {
-  display: inline-block;
-  font-size: 40px;
-  animation: dig-loupe-scan 1.6s ease-in-out infinite;
+.dig-zigzag-grid line {
+  stroke: var(--relic-line);
+  stroke-width: 0.75;
+  opacity: 0.35;
+}
+.dig-zigzag-stroke {
+  stroke: var(--relic-gold);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: dig-zigzag-sweep 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 45ms);
 }
 
 .dig-label {
@@ -191,13 +195,10 @@
   15% { opacity: 1; }
   100% { opacity: 0; }
 }
-@keyframes dig-scanline-pulse {
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.7; }
-}
-@keyframes dig-loupe-scan {
-  0%, 100% { transform: translateX(-14px) rotate(-6deg); }
-  50% { transform: translateX(14px) rotate(6deg); }
+@keyframes dig-zigzag-sweep {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  28%, 100% { opacity: 0.25; }
 }
 @keyframes dig-stamp-in {
   0% { opacity: 0; transform: scale(0) rotate(-14deg); }
@@ -206,10 +207,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dig-pick,
-  .dig-reveal-scanline::after,
+  .dig-zigzag-stroke,
   .dig-reveal-rays::before {
     animation: none !important;
+    opacity: 0.6;
   }
 }
 

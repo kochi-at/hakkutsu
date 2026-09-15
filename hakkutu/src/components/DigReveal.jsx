@@ -4,6 +4,44 @@ import "./DigReveal.css";
 
 const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
 
+// 鑑定中アイコン: 実際の走査位置ではなく、1枚のアイコンとしてジグザグ格子を描くだけ。
+const ZIGZAG_GRID = 6;
+const ZIGZAG_CELL = 20;
+const ZIGZAG_SIZE = ZIGZAG_GRID * ZIGZAG_CELL;
+const ZIGZAG_LINES = Array.from({ length: ZIGZAG_GRID + 1 }, (_, i) => i * ZIGZAG_CELL);
+const ZIGZAG_STROKES = Array.from({ length: ZIGZAG_GRID * ZIGZAG_GRID }, (_, index) => {
+  const row = Math.floor(index / ZIGZAG_GRID);
+  const col = index % ZIGZAG_GRID;
+  const x = col * ZIGZAG_CELL;
+  const y = row * ZIGZAG_CELL;
+  return { index, x1: x, y1: y + ZIGZAG_CELL, x2: x + ZIGZAG_CELL, y2: y };
+});
+
+function ZigzagScanIcon() {
+  return (
+    <svg className="dig-zigzag" viewBox={`0 0 ${ZIGZAG_SIZE} ${ZIGZAG_SIZE}`} aria-hidden="true">
+      <rect className="dig-zigzag-frame" x="1" y="1" width={ZIGZAG_SIZE - 2} height={ZIGZAG_SIZE - 2} />
+      {ZIGZAG_LINES.map((pos) => (
+        <g key={pos} className="dig-zigzag-grid">
+          <line x1={pos} y1="0" x2={pos} y2={ZIGZAG_SIZE} />
+          <line x1="0" y1={pos} x2={ZIGZAG_SIZE} y2={pos} />
+        </g>
+      ))}
+      {ZIGZAG_STROKES.map(({ index, x1, y1, x2, y2 }) => (
+        <line
+          key={index}
+          className="dig-zigzag-stroke"
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
+          style={{ "--i": index }}
+        />
+      ))}
+    </svg>
+  );
+}
+
 const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = true, onReveal, onComplete, onCancel }, ref) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
@@ -67,8 +105,7 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
       <div className="dig-reveal-flash" aria-hidden="true" />
 
       <div className="dig-reveal-inspect">
-        <div className="dig-reveal-scanline" aria-hidden="true" />
-        <span className="dig-pick" aria-hidden="true">🔍</span>
+        <ZigzagScanIcon />
         <p className="dig-label">{evaluation ? "鑑定完了" : "鑑定中..."}</p>
         {evaluation && !revealStarted && (
           <button type="button" className="dig-reveal-result" onClick={onReveal}>
