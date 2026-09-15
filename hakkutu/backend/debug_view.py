@@ -12,13 +12,17 @@ from fastapi import Path as PathParam
 from PIL import Image, ImageDraw, ImageFont
 
 from appraisal import (
+    EDGE_MAX,
     RGB_TO_YIQ,
+    SAT_MAX,
     SUBJECT_RADIUS_RATIO,
+    VAR_MAX,
     AppraisalError,
     appraise,
     center_circle_mask,
     dct_degrade,
     load_rgb_array,
+    normalize_stats,
 )
 
 router = APIRouter(prefix="/debug", tags=["debug"])
@@ -117,6 +121,44 @@ def debug_appraise(file: Annotated[UploadFile, File()]):
         return {
             **appraisal.model_dump(),
             "visualization_url": f"/debug/visualization/{image_id}.png",
+        }
+    finally:
+        file.file.close()
+
+
+@router.post("/stat-constants")
+def debug_stat_constants(file: Annotated[UploadFile, File()]):
+    """attack・endurance・magicの正規化前の生値と、現在のEDGE_MAX・VAR_MAX・SAT_MAX
+    で正規化した値(レア度補正前)を並べて返す。定数調整用で、レア度補正は含まない。"""
+    try:
+        contents = file.file.read(MAX_FILE_SIZE + 1)
+        if len(contents) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="写真は10MiB以下にしてください")
+        try:
+            result = appraise(contents)
+        except AppraisalError as exc:
+            raise HTTPException(status_code=400, detail="有効な画像ではありません") from exc
+
+        attack, endurance, magic = normalize_stats(
+            result.edge_density, result.y_variance, result.saturation
+        )
+
+        return {
+            "raw": {
+                "edge_density": result.edge_density,
+                "y_variance": result.y_variance,
+                "saturation": result.saturation,
+            },
+            "normalized": {
+                "attack": attack,
+                "endurance": endurance,
+                "magic": magic,
+            },
+            "constants": {
+                "EDGE_MAX": EDGE_MAX,
+                "VAR_MAX": VAR_MAX,
+                "SAT_MAX": SAT_MAX,
+            },
         }
     finally:
         file.file.close()

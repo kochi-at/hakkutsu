@@ -10,12 +10,17 @@ import relic
 from appraisal import AppraisalResult
 
 
-LORE = {"name": "紅蓮の聖杯", "origin_era": "灰燼暦の末期",
-        "lore": "古代の王が使った架空の聖杯。",
-        "stats": {"power": 92, "mystery": 70, "preservation": 55}}
-APPRAISAL = AppraisalResult(rarity=4, element="炎", luminance_ratio=1.1, saturation=0.2,
-                            hue_angle=20.0)
-EVALUATION = {**LORE, "rarity": 4, "element": "炎"}
+LORE = {"name": "紅蓮の聖杯", "lore": "古代の王が使った架空の聖杯。"}
+APPRAISAL = AppraisalResult(rarity=4, element="火", luminance_ratio=1.1, saturation=0.2,
+                            hue_angle=20.0, attack=60, endurance=70, magic=50,
+                            edge_density=0.05, y_variance=0.005, y=0.5, i=0.1, q=0.15)
+EVALUATION = {
+    **LORE,
+    "rarity": 4,
+    "element": "火",
+    "stats": {"attack": 60, "endurance": 70, "magic": 50},
+    "analysis": {"y": 0.5, "i": 0.1, "q": 0.15, "saturation": 0.2, "hueAngle": 20.0},
+}
 
 
 class RelicTests(unittest.TestCase):
@@ -34,7 +39,7 @@ class RelicTests(unittest.TestCase):
             # 計測済みのレア度と属性をLLMに伝えている。
             prompt = request["json"]["contents"][0]["parts"][0]["text"]
             self.assertIn("レア度4", prompt)
-            self.assertIn("炎", prompt)
+            self.assertIn("火", prompt)
             # LLMに返させるスキーマにレア度と属性を含めない。
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
             self.assertNotIn("rarity", schema_fields)
@@ -42,7 +47,7 @@ class RelicTests(unittest.TestCase):
 
     def test_llm_cannot_overwrite_rarity_and_element(self):
         response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
-            "parts": [{"text": json.dumps({**LORE, "rarity": 1, "element": "闇"})}]}}]})
+            "parts": [{"text": json.dumps({**LORE, "rarity": 1, "element": "水"})}]}}]})
         with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:
             client.return_value.__enter__.return_value.post.return_value = response
             self.assertEqual(relic.evaluate_photo(b"photo", "image/png", APPRAISAL), EVALUATION)

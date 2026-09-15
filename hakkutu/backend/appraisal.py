@@ -43,16 +43,39 @@ MIN_MEAN_LUMINANCE: float = 1e-6
 # レア度の境界。luminance_ratioがこの値を超えるごとにレア度が1段階上がる(1〜5)。
 RARITY_THRESHOLDS: tuple[float, ...] = (0.85, 0.95, 1.05, 1.20)
 
-# この彩度を下回る対象は無彩色とみなし、属性を「無」にする。
-ACHROMATIC_SATURATION: float = 0.04
-
 # 色相の角度(度)と属性の対応。上限値の昇順に並べ、最後が360度で一周する。
+# フロントエンドのResultCardが扱う4属性(火・水・木・雷)に合わせて90度ずつ均等に分割する。
 ELEMENT_SECTORS: tuple[tuple[float, str], ...] = (
-    (72.0, "炎"),
-    (144.0, "闇"),
-    (216.0, "水"),
-    (288.0, "風"),
+    (90.0, "火"),
+    (180.0, "水"),
+    (270.0, "木"),
     (360.0, "雷"),
+)
+
+# --- ステータス算出用の定数 -------------------------------------------
+# 攻撃力(エッジ密度)・耐久(分散)・魔力(彩度)は、生の特徴量をこれらの値で割って
+# 0〜1に正規化してから100倍する。当日、実物の聖遺物を撮影しながら調整する。
+EDGE_MAX: float = 0.15
+VAR_MAX: float = 0.02
+SAT_MAX: float = 0.25
+
+# エッジ密度の平均を取る際、マスク境界(輝度が急変し偽のエッジが出る場所)を
+# 避けるために円を内側へ収縮させるピクセル数。
+EDGE_MASK_EROSION_PX: float = 6.0
+
+# レア度によるステータス補正: 基礎値(0〜100) × (RARITY_BASE_MULTIPLIER + rarity × RARITY_STEP_MULTIPLIER)。
+RARITY_BASE_MULTIPLIER: float = 0.5
+RARITY_STEP_MULTIPLIER: float = 0.12
+
+# ステータスの上限値(補正後にこの値でクランプする)。
+STAT_MAX_VALUE: int = 110
+
+# Sobelフィルタのカーネル。x方向・y方向それぞれの勾配を求める。
+_SOBEL_X: npt.NDArray[np.float64] = np.array(
+    [[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]]
+)
+_SOBEL_Y: npt.NDArray[np.float64] = np.array(
+    [[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]]
 )
 
 
@@ -63,6 +86,16 @@ class AppraisalResult(BaseModel):
     saturation: float
     # 属性を決めた色相の角度(度)。閾値調整のために残す。
     hue_angle: float
+    attack: int = Field(ge=0, le=STAT_MAX_VALUE)
+    endurance: int = Field(ge=0, le=STAT_MAX_VALUE)
+    magic: int = Field(ge=0, le=STAT_MAX_VALUE)
+    # 正規化前の生の特徴量。EDGE_MAX・VAR_MAXの調整に使う(SAT_MAXの調整にはsaturationを使う)。
+    edge_density: float
+    y_variance: float
+    # 対象領域のYIQの平均値。フロントエンドの解析値表示にそのまま使う。
+    y: float
+    i: float
+    q: float
 
 
 class AppraisalError(Exception):
@@ -148,16 +181,72 @@ def dct_degrade(rgb: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     return np.clip(restored[:height, :width], 0.0, 1.0)
 
 
-def center_circle_mask(height: int, width: int) -> npt.NDArray[np.bool_]:
-    """画像中央の円(対象領域)だけがTrueになる真偽値の配列を作る。"""
+def _circle_mask(height: int, width: int, radius: float) -> npt.NDArray[np.bool_]:
+    """画像中央から半径radius以内だけがTrueになる真偽値の配列を作る。"""
     # 各画素の座標を縦ベクトル・横ベクトルとして用意し、中心からの距離を一度に計算する。
     rows, cols = np.ogrid[:height, :width]
     center_row = (height - 1) / 2.0
     center_col = (width - 1) / 2.0
-    radius = min(height, width) * SUBJECT_RADIUS_RATIO
 
     # 平方根を取らずに距離の2乗同士で比べる(結果は同じで計算が軽い)。
     return (rows - center_row) ** 2 + (cols - center_col) ** 2 <= radius**2
+
+
+def center_circle_mask(height: int, width: int) -> npt.NDArray[np.bool_]:
+    """画像中央の円(対象領域)だけがTrueになる真偽値の配列を作る。"""
+    radius = min(height, width) * SUBJECT_RADIUS_RATIO
+    return _circle_mask(height, width, radius)
+
+
+def eroded_center_circle_mask(height: int, width: int, erosion_px: float) -> npt.NDArray[np.bool_]:
+    """center_circle_maskと同じ円を、指定ピクセル数だけ内側に収縮させた版。
+    マスクの境界は輝度が急変して偽のエッジになるため、エッジ密度を求める際はこちらを使う。"""
+    radius = min(height, width) * SUBJECT_RADIUS_RATIO - erosion_px
+    return _circle_mask(height, width, max(radius, 0.0))
+
+
+def _convolve3x3(field: npt.NDArray[np.float64], kernel: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """2次元配列に3x3カーネルを畳み込む。端は同じ画素を延長して埋める。
+    ループはカーネルの9マス分だけで、画素単位のループは書かない。"""
+    padded = np.pad(field, 1, mode="edge")
+    height, width = field.shape
+    result = np.zeros_like(field)
+    for i in range(3):
+        for j in range(3):
+            weight = kernel[i, j]
+            if weight == 0.0:
+                continue
+            result += weight * padded[i : i + height, j : j + width]
+    return result
+
+
+def _sobel_gradient_magnitude(field: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Sobelフィルタでx方向・y方向の勾配を求め、勾配強度sqrt(gx^2+gy^2)を返す。"""
+    gx = _convolve3x3(field, _SOBEL_X)
+    gy = _convolve3x3(field, _SOBEL_Y)
+    return np.hypot(gx, gy)
+
+
+def _normalize_to_100(raw_value: float, max_value: float) -> float:
+    """生の特徴量をmax_valueで割って0〜1にクランプし、100倍する。"""
+    return float(np.clip(raw_value / max_value, 0.0, 1.0)) * 100.0
+
+
+def _apply_rarity(base_value: float, rarity: int) -> int:
+    """0〜100に正規化した基礎値にレア度補正を掛け、STAT_MAX_VALUEでクランプする。
+    正規化前に補正を掛けると値が破綻するため、必ずこの順番で呼び出すこと。"""
+    corrected = base_value * (RARITY_BASE_MULTIPLIER + rarity * RARITY_STEP_MULTIPLIER)
+    return int(min(round(corrected), STAT_MAX_VALUE))
+
+
+def normalize_stats(edge_density: float, y_variance: float, saturation: float) -> tuple[float, float, float]:
+    """生の特徴量(edge_density, y_variance, saturation)を、レア度補正前の
+    0〜100の値(attack, endurance, magic)に正規化する。EDGE_MAX・VAR_MAX・SAT_MAXの
+    調整結果を確認するデバッグ用途と、appraise()本体の両方から呼ばれる。"""
+    attack = _normalize_to_100(edge_density, EDGE_MAX)
+    endurance = 100.0 * (1.0 - float(np.clip(y_variance / VAR_MAX, 0.0, 1.0)))
+    magic = _normalize_to_100(saturation, SAT_MAX)
+    return attack, endurance, magic
 
 
 def _to_rarity(luminance_ratio: float) -> int:
@@ -166,12 +255,8 @@ def _to_rarity(luminance_ratio: float) -> int:
     return int(np.searchsorted(RARITY_THRESHOLDS, luminance_ratio, side="right")) + 1
 
 
-def _to_element(hue_angle: float, saturation: float) -> str:
-    """色相の角度と彩度から属性を決める。"""
-    # 灰色に近い対象は、わずかなノイズで色相が大きく振れてしまうため属性を持たせない。
-    if saturation < ACHROMATIC_SATURATION:
-        return "無"
-
+def _to_element(hue_angle: float) -> str:
+    """色相の角度から属性を決める。"""
     for upper_bound, element in ELEMENT_SECTORS:
         if hue_angle < upper_bound:
             return element
@@ -199,7 +284,8 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     overall_mean_luminance = max(float(luminance.mean()), MIN_MEAN_LUMINANCE)
     luminance_ratio = float(luminance[subject_mask].mean()) / overall_mean_luminance
 
-    # 対象領域のI・Qを平均し、(I, Q)平面上での原点からの距離を彩度とする。
+    # 対象領域のY・I・Qを平均する。(I, Q)平面上での原点からの距離を彩度とする。
+    mean_luminance = float(luminance[subject_mask].mean())
     mean_in_phase = float(in_phase[subject_mask].mean())
     mean_quadrature = float(quadrature[subject_mask].mean())
     saturation = float(np.hypot(mean_in_phase, mean_quadrature))
@@ -207,10 +293,37 @@ def appraise(image_bytes: bytes) -> AppraisalResult:
     # atan2は-180〜180度を返すので、0〜360度に直してから区間に割り当てる。
     hue_angle = float(np.degrees(np.arctan2(mean_quadrature, mean_in_phase))) % 360.0
 
+    rarity = _to_rarity(luminance_ratio)
+
+    # NTSCのYIQでは、色の細部(輪郭・模様・質感)の情報はほぼ輝度(Y)成分に
+    # 集約されており、I・Qは色味を薄く塗るだけの情報しか持たない。そのため
+    # 攻撃力(エッジ密度)・耐久(表面の均一さ)はいずれもY成分から求める。
+
+    # ❶ 攻撃力: Y成分のエッジ密度。
+    edge_magnitude = _sobel_gradient_magnitude(luminance)
+    # マスク境界の偽エッジを避けるため、内側に収縮させた領域だけを対象にする。
+    edge_mask = eroded_center_circle_mask(height, width, EDGE_MASK_EROSION_PX)
+    edge_density = float(edge_magnitude[edge_mask].mean())
+
+    # ❷ 耐久: Y成分の分散の低さ。表面が均一(分散が小さい)なほど頑丈とみなす。
+    y_variance = float(luminance[subject_mask].var())
+
+    # ❸ 魔力: 彩度。属性判定で求めたsaturationをそのまま再利用する。
+    attack_base, endurance_base, magic_base = normalize_stats(edge_density, y_variance, saturation)
+
     return AppraisalResult(
-        rarity=_to_rarity(luminance_ratio),
-        element=_to_element(hue_angle, saturation),
+        rarity=rarity,
+        element=_to_element(hue_angle),
         luminance_ratio=luminance_ratio,
         saturation=saturation,
         hue_angle=hue_angle,
+        # レア度による補正は、必ず0〜100に正規化した後に掛ける。
+        attack=_apply_rarity(attack_base, rarity),
+        endurance=_apply_rarity(endurance_base, rarity),
+        magic=_apply_rarity(magic_base, rarity),
+        edge_density=edge_density,
+        y_variance=y_variance,
+        y=mean_luminance,
+        i=mean_in_phase,
+        q=mean_quadrature,
     )
