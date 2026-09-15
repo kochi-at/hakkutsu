@@ -13,6 +13,6 @@ services:
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
       - key: FRONTEND_ORIGINS
-        sync: false
+        value: https://hakkutsu.vercel.app
       - key: ENABLE_DEBUG_ROUTES
         value: "false"
