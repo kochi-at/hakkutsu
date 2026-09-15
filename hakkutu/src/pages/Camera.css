@@ -178,6 +178,7 @@
 .camera-blur-settings,
 .camera-color-settings,
 .camera-spotlight-settings {
+  box-sizing: border-box;
   width: min(100%, 430px);
   padding: 14px 18px;
   border: 1px solid #5c4c2f;
@@ -220,8 +221,20 @@
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.28);
 }
 
-.camera-page > div > div button:last-child:hover:not(:disabled) {
+.camera-page > div > div:not(.camera-filter-toolbar) button:last-child:hover:not(:disabled) {
   background: #ffe6a8;
+}
+
+.camera-page .camera .camera-filter-toolbar button:not(.is-active):hover:not(:disabled) {
+  color: #efe6d2;
+  border-color: #c9ad74;
+  background: #1c1811;
+}
+
+.camera-page .camera .camera-filter-toolbar button.is-active:hover:not(:disabled) {
+  color: #100e0b;
+  border-color: #f1d48d;
+  background: #f1d48d;
 }
 
 /* Home画面の.capture-button:hoverと同じ挙動(浮き上がらせず、発光を強める) */
