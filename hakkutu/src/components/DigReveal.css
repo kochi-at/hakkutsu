@@ -225,6 +225,7 @@
 }
 .dig-reveal-result:hover,
 .dig-reveal-result:focus-visible {
+  color: #100e0b;
   background: #ffe6a8;
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.5);
 }
