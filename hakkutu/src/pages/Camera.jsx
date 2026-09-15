@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import "./Camera.css";
 
+const OUTPUT_WIDTH = 720;
+const OUTPUT_HEIGHT = 960;
+const JPEG_QUALITY = 0.82;
+
 function Camera({ onCapture }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -103,8 +107,8 @@ const takePhoto = () => {
 
   const canvas = document.createElement("canvas");
 
-  canvas.width = 900;
-  canvas.height = 1200;
+  canvas.width = OUTPUT_WIDTH;
+  canvas.height = OUTPUT_HEIGHT;
 
   const context = canvas.getContext("2d");
 
@@ -126,14 +130,14 @@ const takePhoto = () => {
     canvas.height
   );
 
-  const imageData = canvas.toDataURL("image/png");
+  const imageData = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 
   stopCamera();
 
   onCapture(imageData);
 };
 
-const handleFileSelect = (event) => {
+const handleFileSelect = async (event) => {
   const file = event.target.files?.[0];
 
   // 同じファイルを続けて選んでもchangeイベントが発火するようにリセットしておく。
@@ -143,18 +147,25 @@ const handleFileSelect = (event) => {
     return;
   }
 
-  const reader = new FileReader();
-
-  reader.onload = () => {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, Math.max(OUTPUT_WIDTH, OUTPUT_HEIGHT) / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) {
+      bitmap.close();
+      throw new Error("画像を処理できませんでした。");
+    }
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
     stopCamera();
-    onCapture(reader.result);
-  };
-
-  reader.onerror = () => {
+    onCapture(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+  } catch (fileError) {
+    console.error(fileError);
     setError("ファイルを読み込めませんでした。");
-  };
-
-  reader.readAsDataURL(file);
+  }
 };
 
   return (

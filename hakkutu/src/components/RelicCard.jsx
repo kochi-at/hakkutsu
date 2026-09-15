@@ -91,7 +91,7 @@ export default function RelicCard({ evaluation, photo }) {
         <h1 className="relic-card-name"><RubyText parts={evaluation.name_parts} fallback={evaluation.name} /></h1>
 
         {photo && (
-          <div className="relic-card-art">
+          <div className="relic-card-art" data-grayscale={evaluation.rarity === 1 ? "true" : undefined}>
             <img src={photo} alt="鑑定した写真" />
             {sparkle === "sheen" && <div className="relic-card-sheen" aria-hidden="true" />}
             {sparkle === "holo" && <><div className="relic-card-holo" aria-hidden="true" /><div className="relic-card-holo-grain" aria-hidden="true" /></>}
