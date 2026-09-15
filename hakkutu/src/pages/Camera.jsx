@@ -185,17 +185,17 @@ const handleFileSelect = (event) => {
             }}
           >
             <button
-              className="camera-capture-button"
-              onClick={takePhoto}
-            >
-              撮影
-            </button>
-
-            <button
               className="camera-file-button"
               onClick={() => fileInputRef.current?.click()}
             >
               ファイルから選択
+            </button>
+
+            <button
+              className="camera-capture-button"
+              onClick={takePhoto}
+            >
+              撮影
             </button>
 
             {canSwitchCamera && (

@@ -25,24 +25,28 @@
   border: 1px solid #5c4c2f;
   border-radius: 999px;
   font: inherit;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: #efe6d2;
   background: #1c1811;
   cursor: pointer;
   transition: 0.2s;
 }
 
-.camera .camera-capture-button,
 .camera .camera-file-button {
   padding: 12px 24px;
   font-size: 18px;
   white-space: nowrap;
 }
 
-.camera button:first-child {
+/* Home画面の.capture-buttonと同じ見た目にする(主要アクションなので位置ではなく役割で指定) */
+.camera .camera-capture-button {
+  padding: 14px 36px;
+  font-size: 16px;
+  white-space: nowrap;
   color: #100e0b;
   background: #f1d48d;
   border-color: #f1d48d;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .camera button.camera-switch-button {
@@ -74,9 +78,16 @@
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.28);
 }
 
-.camera button:first-child:hover:not(:disabled),
 .camera-page > div > div button:last-child:hover:not(:disabled) {
   background: #ffe6a8;
+}
+
+/* Home画面の.capture-button:hoverと同じ挙動(浮き上がらせず、発光を強める) */
+.camera .camera-capture-button:hover:not(:disabled) {
+  transform: none;
+  border-color: #f1d48d;
+  background: #ffe6a8;
+  box-shadow: 0 0 16px rgba(241, 212, 141, 0.5);
 }
 
 .camera button:focus-visible,
