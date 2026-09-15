@@ -207,8 +207,19 @@ const handleFileSelect = (event) => {
             </button>
 
             {canSwitchCamera && (
-              <button type="button" onClick={switchCamera}>
-                {facingMode === "environment" ? "内カメラに切り替え" : "外カメラに切り替え"}
+              <button
+                className="camera-switch-button"
+                type="button"
+                onClick={switchCamera}
+                aria-label={facingMode === "environment" ? "内カメラに切り替え" : "外カメラに切り替え"}
+                title={facingMode === "environment" ? "内カメラに切り替え" : "外カメラに切り替え"}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7.5 7.5A6 6 0 0 1 18 11" />
+                  <path d="m15.5 8.5 2.5 2.5 2.5-2.5" />
+                  <path d="M16.5 16.5A6 6 0 0 1 6 13" />
+                  <path d="m8.5 15.5-2.5-2.5-2.5 2.5" />
+                </svg>
               </button>
             )}
           </div>
