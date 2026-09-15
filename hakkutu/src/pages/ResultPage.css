@@ -1,12 +1,4 @@
-:root {
-  --relic-bg: #100e0b;
-  --relic-panel: #1c1811;
-  --relic-line: #5c4c2f;
-  --relic-ink: #efe6d2;
-  --relic-ink-dim: #bdb29c;
-  --relic-gold: #f1d48d;
-  --relic-gold-dim: #c9ad74;
-}
+@import "../styles/relic-theme.css";
 
 .relic-result { min-height: 100vh; box-sizing: border-box; padding: 36px 20px; background: var(--relic-bg); color: var(--relic-ink); }
 .relic-result h1 { color: var(--relic-gold); font-size: clamp(28px, 5vw, 44px); line-height: 1.3; }

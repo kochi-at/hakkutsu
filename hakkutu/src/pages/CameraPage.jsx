@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Camera from "./Camera";
+import DigReveal from "../components/DigReveal";
 import "./CameraPage.css";
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -9,6 +10,7 @@ function CameraPage({ onBack }) {
   const [photo, setPhoto] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const [evaluationForReveal, setEvaluationForReveal] = useState(null);
   const navigate = useNavigate();
 
   const handleCapture = (imageData) => {
@@ -55,16 +57,22 @@ function CameraPage({ onBack }) {
     if (isSending) return;
     setIsSending(true);
     setError("");
+    setEvaluationForReveal(null);
     const data = await sendPhoto();
     setIsSending(false);
     if (data) {
-      navigate("/result", {
-        state: {
-          photo: photo,
-          evaluation: data.evaluation,
-        },
-      });
+      // 鑑定結果が届いたので、待機中だったDigRevealをフラッシュ以降へ進める
+      setEvaluationForReveal(data.evaluation);
     }
+  };
+
+  const handleRevealComplete = () => {
+    navigate("/result", {
+      state: {
+        photo,
+        evaluation: evaluationForReveal,
+      },
+    });
   };
 
   return (
@@ -96,6 +104,8 @@ function CameraPage({ onBack }) {
           <Camera onCapture={handleCapture} />
           {error && <p role="alert" style={{ color: "#ffaaaa" }}>{error}</p>}
         </div>
+      ) : isSending || evaluationForReveal ? (
+        <DigReveal evaluation={evaluationForReveal} onComplete={handleRevealComplete} />
       ) : (
         <div
           style={{
@@ -122,7 +132,6 @@ function CameraPage({ onBack }) {
             }}
           >
             <button
-              disabled={isSending}
               onClick={() => { setPhoto(null); setError(""); }}
               style={{
                 padding: "10px 20px",
@@ -133,17 +142,15 @@ function CameraPage({ onBack }) {
             </button>
 
             <button
-              disabled={isSending}
               onClick={handleUsePhoto}
               style={{
                 padding: "10px 20px",
                 cursor: "pointer",
               }}
             >
-              {isSending ? "聖遺物を鑑定中…" : "この写真を鑑定する"}
+              この写真を鑑定する
             </button>
           </div>
-          {isSending && <p role="status" style={{ marginTop: "16px" }}>写真をもとに伝説を読み解いています…</p>}
           {error && <p role="alert" style={{ color: "#ffaaaa", marginTop: "16px" }}>{error}</p>}
         </div>
       )}

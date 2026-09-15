@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import DigReveal from "../components/DigReveal";
 import "./ResultPage.css";
 
 const STAT_LABELS = { attack: "攻撃", endurance: "耐久", magic: "魔力" };
@@ -18,13 +16,6 @@ function RubyText({ parts, fallback }) {
 export default function ResultPage() {
   const { state } = useLocation();
   const evaluation = state?.evaluation;
-  const [revealed, setRevealed] = useState(false);
-
-  useEffect(() => {
-    setRevealed(false);
-  }, [state]);
-
-  const showReveal = Boolean(evaluation) && !revealed;
 
   return (
     <main className="relic-result">
@@ -33,8 +24,6 @@ export default function ResultPage() {
           <h1>まだ鑑定結果がありません</h1>
           <Link to="/CameraPage">写真を撮って鑑定する</Link>
         </>
-      ) : showReveal ? (
-        <DigReveal evaluation={evaluation} onComplete={() => setRevealed(true)} />
       ) : (
         <>
           <p className="relic-eyebrow">伝説の聖遺物 鑑定書</p>

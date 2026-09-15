@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { digTier } from "./digTier";
 import "./DigReveal.css";
 
-const TIMING = { inspect: 1200, flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
+const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
 
 export default function DigReveal({ evaluation, onComplete }) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
+  // 実際の鑑定結果(evaluation)が届くまでは "inspecting" のまま待機し続ける。
+  // 待ち時間は呼び出し側の非同期処理の長さがそのまま演出時間になる。
   const [phase, setPhase] = useState("inspecting"); // inspecting -> flash -> rolling -> done
   const doneRef = useRef(false);
 
@@ -17,6 +19,8 @@ export default function DigReveal({ evaluation, onComplete }) {
   };
 
   useEffect(() => {
+    if (!evaluation) return;
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
       finish();
@@ -27,10 +31,7 @@ export default function DigReveal({ evaluation, onComplete }) {
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     async function run() {
-      await sleep(TIMING.inspect);
-      if (cancelled) return;
       setPhase("flash");
-
       await sleep(TIMING.flash);
       if (cancelled) return;
       setPhase("rolling");
@@ -50,13 +51,19 @@ export default function DigReveal({ evaluation, onComplete }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluation]);
 
-  const handleSkip = () => finish();
+  const handleSkip = () => {
+    // 通信待ち中(evaluation未到着)はスキップ対象がまだ無いので何もしない
+    if (!evaluation) return;
+    finish();
+  };
 
   return (
     <div className="dig-reveal" data-phase={phase}>
-      <button type="button" className="dig-reveal-skip" onClick={handleSkip}>
-        スキップ
-      </button>
+      {evaluation && (
+        <button type="button" className="dig-reveal-skip" onClick={handleSkip}>
+          スキップ
+        </button>
+      )}
       <div className="dig-reveal-rays" aria-hidden="true" />
       <div className="dig-reveal-flash" aria-hidden="true" />
 
