@@ -1,0 +1,40 @@
+@import "../styles/relic-theme.css";
+
+.collection-page { min-height: 100vh; box-sizing: border-box; padding: 32px 20px 48px; color: var(--relic-ink); background: var(--relic-bg); }
+.collection-header { display: flex; max-width: 920px; margin: 0 auto 28px; align-items: flex-end; justify-content: space-between; gap: 20px; text-align: left; }
+.collection-header h1 { margin: 4px 0 0; color: var(--relic-gold); font-size: clamp(28px, 5vw, 42px); }
+.collection-eyebrow { margin: 0; color: var(--relic-gold-dim); letter-spacing: .15em; }
+.collection-header a, .collection-empty a { color: var(--relic-gold); }
+.collection-status, .collection-error { margin: 40px auto; text-align: center; }
+.collection-error { color: #ffb4a8; }
+.collection-empty { max-width: 520px; margin: 64px auto; padding: 32px; border: 1px solid var(--relic-line); border-radius: 16px; background: var(--relic-panel); text-align: center; }
+.collection-empty p { margin-bottom: 18px; color: var(--relic-ink-dim); }
+.collection-grid { display: grid; max-width: 920px; margin: 0 auto; grid-template-columns: repeat(auto-fill, minmax(220px, 260px)); align-items: start; justify-content: center; gap: 24px; }
+.collection-card { min-width: 0; }
+.collection-card-preview { position: relative; }
+.collection-card-preview .relic-card { max-width: 260px; padding: 5px; border-radius: 16px; transition: transform .18s ease, filter .18s ease; }
+.collection-card-preview .relic-card-inner { padding: 11px 12px 13px; border-radius: 12px; }
+.collection-card-preview .relic-card-header { margin-bottom: 8px; }
+.collection-card-preview .relic-card-inner .relic-card-name { margin-bottom: 8px; font-size: 17px; }
+.collection-card-preview .relic-card-art { margin-bottom: 9px; border-radius: 8px; }
+.collection-card-preview .relic-card-stats { gap: 5px; margin-bottom: 9px; }
+.collection-card-preview .relic-card-stat { gap: 5px; }
+.collection-card-preview .relic-card-stat-icon { width: 15px; height: 15px; }
+.collection-card-preview .relic-card-stat-label, .collection-card-preview .relic-card-stat-value { font-size: 10px; }
+.collection-card-preview .relic-card-stat-bar { height: 6px; }
+.collection-card-preview .relic-card-lore { margin-bottom: 8px; padding: 9px 10px; }
+.collection-card-preview .relic-card-lore-text { font-size: 10px; line-height: 1.6; }
+.collection-card-preview .relic-card-tier { font-size: 9px; }
+.collection-card-open { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; border-radius: 16px; background: transparent; cursor: pointer; }
+.collection-card-preview:has(.collection-card-open:hover) .relic-card { transform: translateY(-3px); filter: brightness(1.05); }
+.collection-card-open:focus-visible { outline: 2px solid var(--relic-gold); outline-offset: 5px; }
+.collection-card-actions { min-height: 24px; padding: 10px 8px 0; text-align: center; }
+.collection-card-actions time { color: var(--relic-ink-dim); font-size: 11px; }
+
+@media (max-width: 520px) {
+  .collection-page { padding-inline: 16px; }
+  .collection-header { align-items: flex-start; flex-direction: column; }
+  .collection-grid { grid-template-columns: 1fr; }
+  .collection-grid { grid-template-columns: minmax(0, 260px); }
+  .collection-card-preview .relic-card { margin-inline: auto; }
+}

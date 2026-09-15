@@ -9,9 +9,14 @@ function Home() {
       <p className="home-eyebrow">遺物鑑定所</p>
       <h1>聖遺物鑑定</h1>
       <p className="home-lead">写真を撮って、そこに眠る聖遺物の伝説を鑑定しましょう。</p>
-      <button type="button" className="capture-button" onClick={() => navigate('/CameraPage')}>
-        撮影
-      </button>
+      <div className="home-actions">
+        <button type="button" className="capture-button" onClick={() => navigate('/CameraPage')}>
+          撮影
+        </button>
+        <button type="button" className="collection-button" onClick={() => navigate('/collection')}>
+          図鑑を見る
+        </button>
+      </div>
     </div>
   )
 }

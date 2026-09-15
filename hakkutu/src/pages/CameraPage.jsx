@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Camera from "./Camera";
 import DigReveal from "../components/DigReveal";
+import { saveRelic } from "../lib/relicDb";
 import "./CameraPage.css";
 
 const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -12,9 +13,11 @@ function CameraPage({ onBack }) {
   const [error, setError] = useState("");
   const [evaluationForReveal, setEvaluationForReveal] = useState(null);
   const abortControllerRef = useRef(null);
+  const saveStartedRef = useRef(false);
   const navigate = useNavigate();
 
   const handleCapture = (imageData) => {
+    saveStartedRef.current = false;
     setPhoto(imageData);
   };
 
@@ -74,11 +77,26 @@ function CameraPage({ onBack }) {
     }
   };
 
-  const handleRevealComplete = () => {
+  const handleRevealComplete = async () => {
+    if (saveStartedRef.current) return;
+    saveStartedRef.current = true;
+
+    let collectionSaved = false;
+    let collectionSaveError = "";
+    try {
+      await saveRelic({ photo, evaluation: evaluationForReveal });
+      collectionSaved = true;
+    } catch (saveError) {
+      console.error("図鑑への保存に失敗しました:", saveError);
+      collectionSaveError = saveError.message;
+    }
+
     navigate("/result", {
       state: {
         photo,
         evaluation: evaluationForReveal,
+        collectionSaved,
+        collectionSaveError,
       },
     });
   };
@@ -87,6 +105,7 @@ function CameraPage({ onBack }) {
     abortControllerRef.current?.abort();
     setIsSending(false);
     setEvaluationForReveal(null);
+    saveStartedRef.current = false;
     setError("");
     setPhoto(null);
   };
