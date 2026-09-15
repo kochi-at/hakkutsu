@@ -2,6 +2,8 @@
 
 .relic-result { min-height: 100vh; box-sizing: border-box; padding: 36px 20px; background: var(--relic-bg); color: var(--relic-ink); display: flex; flex-direction: column; align-items: center; }
 .relic-result h1 { color: var(--relic-gold); font-size: clamp(28px, 5vw, 44px); line-height: 1.3; }
+.relic-back-button { align-self: center; width: 100%; max-width: 380px; box-sizing: border-box; margin: 0 0 16px; padding: 10px 15px; border: 1px solid var(--relic-line); border-radius: 999px; background: var(--relic-panel); text-align: left; text-decoration: none; }
+.relic-back-button:hover { border-color: var(--relic-gold-dim); }
 
 /* ---- カード外枠(レアリティ) ---- */
 .relic-card {
@@ -176,6 +178,10 @@
 
 /* ---- カード外の補足情報 ---- */
 .relic-note { color: var(--relic-ink-dim); margin: 24px 0 4px; font-size: 14px; text-align: center; }
+.relic-save-status { margin: 8px 0 0; color: var(--relic-gold); font-size: 14px; text-align: center; }
+.relic-save-error { margin: 8px 0 0; color: #ffb4a8; font-size: 14px; text-align: center; }
 .relic-analysis { color: var(--relic-ink-dim); margin: 0 0 24px; font-size: 12px; opacity: 0.8; text-align: center; }
 .relic-result nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
 .relic-result a { color: var(--relic-gold); }
+.relic-delete-button { padding: 0; border: 0; color: #ffb4a8; background: transparent; font: inherit; text-decoration: underline; cursor: pointer; }
+.relic-delete-button:hover { color: #ffd0c9; }
