@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from appraisal import AppraisalResult
+from mock_gemini import create_mock_lore
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -59,6 +60,26 @@ RELIC_LORE_SCHEMA = {
 }
 
 
+def _build_result(lore: RelicLore, appraisal: AppraisalResult) -> dict:
+    return {
+        **lore.model_dump(),
+        "rarity": appraisal.rarity,
+        "element": appraisal.element,
+        "stats": {
+            "attack": appraisal.attack,
+            "endurance": appraisal.endurance,
+            "magic": appraisal.magic,
+        },
+        "analysis": {
+            "y": appraisal.y,
+            "i": appraisal.i,
+            "q": appraisal.q,
+            "saturation": appraisal.saturation,
+            "hueAngle": appraisal.hue_angle,
+        },
+    }
+
+
 PROMPT = """あなたはファンタジー世界の聖遺物鑑定士です。日本語で回答してください。
 写真に写る主な物や人物の、目に見える形・色・服装・ポーズを観察し、
 それを伝説の聖遺物にこじつけて、壮大でユーモラスな鑑定をしてください。
@@ -81,6 +102,9 @@ lore_partsにはloreを表示順に分割して入れ、全textを連結する�
 
 
 def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResult) -> dict:
+    if os.getenv("MOCK_GEMINI", "false").lower() == "true":
+        return _build_result(RelicLore.model_validate(create_mock_lore()), appraisal)
+
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key or api_key == "your_api_key_here":
         raise HTTPException(503, "backend/.env に GEMINI_API_KEY を設定してください")
@@ -134,23 +158,7 @@ def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResul
                        if not part.get("thought"))
         # レア度・属性・能力値・解析値は鑑定アルゴリズムの結果で確定させ、LLMの応答では上書きしない。
         # フロントエンドのResultCardが要求するデータ形式に合わせる。
-        return {
-            **RelicLore.model_validate_json(text).model_dump(),
-            "rarity": appraisal.rarity,
-            "element": appraisal.element,
-            "stats": {
-                "attack": appraisal.attack,
-                "endurance": appraisal.endurance,
-                "magic": appraisal.magic,
-            },
-            "analysis": {
-                "y": appraisal.y,
-                "i": appraisal.i,
-                "q": appraisal.q,
-                "saturation": appraisal.saturation,
-                "hueAngle": appraisal.hue_angle,
-            },
-        }
+        return _build_result(RelicLore.model_validate_json(text), appraisal)
     except httpx.TimeoutException as exc:
         raise HTTPException(504, "鑑定がタイムアウトしました。もう一度お試しください") from exc
     except httpx.RequestError as exc:

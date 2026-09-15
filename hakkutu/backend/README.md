@@ -51,6 +51,21 @@ Reactは `/result` に移動して写真と鑑定コメントを表示します�
 利用上限は429、タイムアウトは504、Geminiの接続・応答エラーは502です。
 結果は画面遷移時の状態で保持し、履歴の永続保存は行っていません。
 
+## Geminiを使わない確認モード
+
+`backend/.env`に次を設定してFastAPIを再起動すると、Gemini APIを呼ばず
+`mock_gemini.py`の固定テンプレートを返します。APIキーや利用枠を使わずに結果画面を確認できます。
+
+```dotenv
+MOCK_GEMINI=true
+```
+
+通常の鑑定へ戻すときは`false`にしてFastAPIを再起動します。未設定時も`false`です。
+
+```dotenv
+MOCK_GEMINI=false
+```
+
 API仕様: [画像の理解](https://ai.google.dev/gemini-api/docs/image-understanding)、
 [GenerateContent](https://ai.google.dev/api/generate-content)。
 
