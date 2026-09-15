@@ -11,6 +11,12 @@ import main
 
 
 class UploadTests(unittest.TestCase):
+    def test_health_check(self):
+        with TestClient(main.app) as client:
+            response = client.get("/health")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {"status": "ok"})
+
     def test_supported_photos_are_saved(self):
         with TemporaryDirectory() as directory, patch.object(main, "UPLOAD_DIR", Path(directory)), patch.object(main, "evaluate_photo", return_value={"comment": "伝説の聖遺物です"}) as evaluate:
             with TestClient(main.app) as client:

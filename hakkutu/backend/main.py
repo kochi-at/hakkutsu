@@ -1,4 +1,5 @@
 from io import BytesIO
+import os
 from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
@@ -12,15 +13,26 @@ from debug_view import router as debug_router
 from relic import evaluate_photo
 
 app = FastAPI(title="写真アップロードAPI")
+
+# カンマ区切りで複数指定できる。未設定時はローカルのViteだけを許可する。
+frontend_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["POST"],
+    allow_origins=frontend_origins,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 # 閾値調整用。本番のフロントからは使わない。
-app.include_router(debug_router)
+if os.getenv("ENABLE_DEBUG_ROUTES", "false").lower() == "true":
+    app.include_router(debug_router)
 
 UPLOAD_DIR = Path(__file__).resolve().parent / "uploads"
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -29,6 +41,12 @@ IMAGE_TYPES = {
     "JPEG": ("image/jpeg", ".jpg"),
     "WEBP": ("image/webp", ".webp"),
 }
+
+
+@app.get("/health")
+def health_check():
+    """デプロイ先がアプリの稼働状態を確認するためのエンドポイント。"""
+    return {"status": "ok"}
 
 
 @app.post("/upload", status_code=201)
