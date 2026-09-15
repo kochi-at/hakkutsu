@@ -1,26 +1,181 @@
 @import "../styles/relic-theme.css";
 
-.relic-result { min-height: 100vh; box-sizing: border-box; padding: 36px 20px; background: var(--relic-bg); color: var(--relic-ink); }
+.relic-result { min-height: 100vh; box-sizing: border-box; padding: 36px 20px; background: var(--relic-bg); color: var(--relic-ink); display: flex; flex-direction: column; align-items: center; }
 .relic-result h1 { color: var(--relic-gold); font-size: clamp(28px, 5vw, 44px); line-height: 1.3; }
-.relic-result ruby { ruby-position: over; }
-.relic-result rt { color: var(--relic-gold-dim); font-size: 0.45em; font-weight: 400; }
-.relic-result h2 { color: var(--relic-gold); }
-.relic-eyebrow { color: var(--relic-gold-dim); letter-spacing: 0.15em; }
-.relic-photo { display: block; width: min(100%, 360px); max-height: 480px; object-fit: contain; margin: 24px auto; border-radius: 16px; }
-.relic-score { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; color: var(--relic-gold); font-size: 24px; margin-bottom: 24px; }
-.relic-rarity { position: relative; display: inline-block; line-height: 1; letter-spacing: 0.1em; white-space: nowrap; }
-.relic-rarity-empty { color: var(--relic-line); }
-.relic-rarity-filled { position: absolute; top: 0; left: 0; overflow: hidden; color: var(--relic-gold); white-space: nowrap; }
-.relic-rarity-value { color: var(--relic-gold-dim); font-size: 16px; }
-.relic-element { padding: 4px 14px; font-size: 16px; border: 1px solid var(--relic-line); border-radius: 999px; background: var(--relic-panel); }
-.relic-stat { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
-.relic-stat-label { flex: 0 0 5em; font-size: 15px; }
-.relic-stat-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--relic-bg); overflow: hidden; }
-.relic-stat-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--relic-gold-dim), var(--relic-gold)); }
-.relic-stat-value { flex: 0 0 2.5em; text-align: right; font-size: 15px; color: var(--relic-gold); }
-.relic-result section { max-width: 640px; margin: 16px auto; padding: 24px; text-align: left; border: 1px solid var(--relic-line); border-radius: 12px; background: var(--relic-panel); }
-.relic-result section p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; }
-.relic-note { color: var(--relic-ink-dim); margin: 24px 0 4px; font-size: 14px; }
-.relic-analysis { color: var(--relic-ink-dim); margin: 0 0 24px; font-size: 12px; opacity: 0.8; }
+
+/* ---- カード外枠(レアリティ) ---- */
+.relic-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 8px;
+  border-radius: 22px;
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7);
+}
+.relic-card[data-tier="一般資料級"] {
+  background: linear-gradient(155deg, #9c8a63, #4a3f2c);
+}
+.relic-card[data-tier="貴重資料級"] {
+  background: linear-gradient(155deg, #eef0f2, #b9bfc6 45%, #6e747a);
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 18px rgba(200, 210, 220, 0.22);
+}
+.relic-card[data-tier="重要文化財級"] {
+  background: linear-gradient(155deg, #fff3d0, #f1d48d 40%, #a9812f 75%, #f1d48d);
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 28px rgba(241, 212, 141, 0.32);
+}
+.relic-card[data-tier="国宝級"] {
+  background: linear-gradient(155deg, #fff3d0 0%, #ffb3d9 16%, #b3ffd9 32%, #b3d9ff 48%, #d9b3ff 64%, #fff3d0 80%, #a9812f 100%);
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7), 0 0 40px rgba(241, 212, 141, 0.4);
+}
+
+/* ---- カード内側(属性) ---- */
+.relic-card-inner {
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  padding: 16px 18px 20px;
+}
+.relic-card-inner[data-element="火"] {
+  --element-accent: #ff9466;
+  --element-text: #fff0e6;
+  background: linear-gradient(165deg, #ff9466 0%, #e8552c 32%, #7a2410 68%, #100e0b 100%);
+}
+.relic-card-inner[data-element="水"] {
+  --element-accent: #7fc4ff;
+  --element-text: #e6f4ff;
+  background: linear-gradient(165deg, #7fc4ff 0%, #2f8fd9 32%, #123a55 68%, #100e0b 100%);
+}
+.relic-card-inner[data-element="木"] {
+  --element-accent: #8fe07f;
+  --element-text: #e6ffe0;
+  background: linear-gradient(165deg, #8fe07f 0%, #3f9b3a 32%, #1f4a1a 68%, #100e0b 100%);
+}
+.relic-card-inner[data-element="雷"] {
+  --element-accent: #ffe066;
+  --element-text: #fff6d9;
+  background: linear-gradient(165deg, #ffe066 0%, #d9b400 32%, #4d3f00 68%, #100e0b 100%);
+}
+
+/* ---- ヘッダー: 属性バッジ + レアリティ ---- */
+.relic-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.relic-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--element-text);
+}
+.relic-card-badge-icon {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #100e0b;
+  color: var(--element-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.relic-card-rarity { position: relative; display: inline-block; line-height: 1; letter-spacing: 0.06em; font-size: 12px; white-space: nowrap; }
+.relic-card-rarity-empty { color: rgba(255, 255, 255, 0.25); }
+.relic-card-rarity-filled { position: absolute; top: 0; left: 0; overflow: hidden; color: #f1d48d; white-space: nowrap; }
+
+/* ---- 名前 ---- */
+/* 詳細度: `.relic-result h1`(空状態の見出し)より優先させるため2クラスにする */
+.relic-card-inner .relic-card-name {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: clamp(20px, 5vw, 26px);
+  line-height: 1.4;
+  color: #fff8e8;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.relic-card-name ruby, .relic-card-lore-text ruby { ruby-position: over; }
+.relic-card-name rt, .relic-card-lore-text rt { color: rgba(255, 255, 255, 0.65); font-size: 0.4em; font-weight: 400; }
+
+/* ---- 写真(アートウィンドウ) ---- */
+.relic-card-art {
+  position: relative;
+  margin: 0 0 14px;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #0a0908;
+  overflow: hidden;
+}
+.relic-card-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.relic-card-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.22) 48%, transparent 62%);
+}
+.relic-card-holo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 120, 120, 0.5), rgba(255, 220, 120, 0.5), rgba(140, 255, 170, 0.5), rgba(120, 200, 255, 0.5), rgba(210, 140, 255, 0.5), rgba(255, 120, 120, 0.5));
+  background-size: 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.5;
+  animation: relic-holo-shift 5s linear infinite;
+}
+.relic-card-holo-grain {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px);
+}
+@keyframes relic-holo-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .relic-card-holo { animation: none; }
+}
+
+/* ---- 能力値(攻撃/耐久/魔力) ---- */
+.relic-card-stats { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.relic-card-stat { display: flex; align-items: center; gap: 8px; }
+.relic-card-stat-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #100e0b;
+  color: var(--element-accent);
+}
+.relic-card-stat-icon--endurance { color: var(--relic-gold); }
+.relic-card-stat-icon--magic { background: linear-gradient(135deg, #c9a6ff, #6b3fd9); color: #fff; }
+.relic-card-stat-label { flex: 0 0 3em; font-size: 12px; color: #fff8f0; }
+.relic-card-stat-bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); overflow: hidden; }
+.relic-card-stat-fill { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f1d48d, #fff3d0); }
+.relic-card-stat-value { flex: 0 0 2.4em; text-align: right; font-size: 12px; color: #fff3d0; font-variant-numeric: tabular-nums; }
+
+/* ---- 解説(キャラの解説) ---- */
+.relic-card-lore {
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 12px;
+}
+.relic-card-lore-label { margin: 0 0 5px; font-size: 10px; letter-spacing: 0.12em; color: var(--element-accent); text-transform: uppercase; }
+.relic-card-lore-text { margin: 0; font-size: 13px; line-height: 1.9; color: #f3e9d8; font-style: italic; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* ---- フッター ---- */
+.relic-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.relic-card-tier { font-size: 11px; color: rgba(255, 255, 255, 0.6); letter-spacing: 0.04em; }
+.relic-card-seal { display: flex; color: #6e6249; opacity: 0.8; }
+.relic-card-seal--sheen { color: #f1d48d; opacity: 1; filter: drop-shadow(0 0 3px rgba(241, 212, 141, 0.6)); }
+.relic-card-seal--holo { color: #f1d48d; opacity: 1; filter: drop-shadow(0 0 5px rgba(241, 212, 141, 0.9)); }
+
+/* ---- カード外の補足情報 ---- */
+.relic-note { color: var(--relic-ink-dim); margin: 24px 0 4px; font-size: 14px; text-align: center; }
+.relic-analysis { color: var(--relic-ink-dim); margin: 0 0 24px; font-size: 12px; opacity: 0.8; text-align: center; }
 .relic-result nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
 .relic-result a { color: var(--relic-gold); }
