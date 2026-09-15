@@ -55,9 +55,11 @@ function MagicIcon() {
 function RarityStars({ rarity }) {
   return (
     <span className="relic-card-rarity" role="img" aria-label={`星評価 ${rarity.toFixed(1)} / 5`}>
-      <span className="relic-card-rarity-empty" aria-hidden="true">★★★★★</span>
-      <span className="relic-card-rarity-filled" aria-hidden="true" style={{ width: `${(rarity / 5) * 100}%` }}>
-        ★★★★★
+      <span className="relic-card-rarity-stars">
+        <span className="relic-card-rarity-empty" aria-hidden="true">★★★★★</span>
+        <span className="relic-card-rarity-filled" aria-hidden="true" style={{ width: `${(rarity / 5) * 100}%` }}>
+          ★★★★★
+        </span>
       </span>
     </span>
   );

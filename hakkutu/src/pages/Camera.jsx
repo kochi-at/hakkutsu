@@ -186,9 +186,15 @@ const handleFileSelect = (event) => {
           >
             <button
               className="camera-file-button"
+              type="button"
               onClick={() => fileInputRef.current?.click()}
+              aria-label="ファイルから選択"
+              title="ファイルから選択"
             >
-              ファイルから選択
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="7" y="7" width="13" height="13" rx="2.5" />
+                <path d="M4 15V6a2 2 0 0 1 2-2h9" />
+              </svg>
             </button>
 
             <button
@@ -196,6 +202,10 @@ const handleFileSelect = (event) => {
               onClick={takePhoto}
             >
               撮影
+              <svg className="camera-capture-button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 8h3l1.7-2.2a1 1 0 0 1 .8-.4h5a1 1 0 0 1 .8.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+                <circle cx="12" cy="13.3" r="3.4" />
+              </svg>
             </button>
 
             {canSwitchCamera && (

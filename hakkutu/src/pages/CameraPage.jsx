@@ -113,16 +113,18 @@ function CameraPage({ onBack }) {
   return (
     <main className="camera-page">
       <button
+        className="camera-page-home-button"
+        type="button"
         disabled={isSending}
         onClick={onBack}
-        style={{
-          marginBottom: "20px",
-          padding: "8px 16px",
-          cursor: "pointer",
-          fontFamily: "'Segoe UI', sans-serif",
-        }}
+        aria-label="ホームに戻る"
+        title="ホームに戻る"
       >
-        ホームに戻る
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 11.5 12 4l8 7.5" />
+          <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
+          <path d="M10 20v-6h4v6" />
+        </svg>
       </button>
 
       {!photo ? (

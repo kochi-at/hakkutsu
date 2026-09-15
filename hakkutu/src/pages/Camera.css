@@ -32,15 +32,13 @@
   transition: 0.2s;
 }
 
-.camera .camera-file-button {
-  padding: 12px 24px;
-  font-size: 18px;
-  white-space: nowrap;
-}
-
 /* Home画面の.capture-buttonと同じ見た目にする(主要アクションなので位置ではなく役割で指定) */
 .camera .camera-capture-button {
-  padding: 14px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 36px;
   font-size: 16px;
   white-space: nowrap;
   color: #100e0b;
@@ -49,7 +47,19 @@
   transition: background 0.2s, box-shadow 0.2s;
 }
 
-.camera button.camera-switch-button {
+.camera-capture-button-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 切り替えボタンとファイル選択ボタンは同じ円形アイコンボタンとして統一する */
+.camera button.camera-switch-button,
+.camera button.camera-file-button {
   display: grid;
   flex: 0 0 46px;
   width: 46px;
@@ -61,7 +71,8 @@
   border-radius: 50%;
 }
 
-.camera-switch-button svg {
+.camera-switch-button svg,
+.camera-file-button svg {
   width: 24px;
   height: 24px;
   fill: none;
@@ -114,14 +125,14 @@
     gap: 8px;
   }
 
-  .camera .camera-capture-button,
-  .camera .camera-file-button {
+  .camera .camera-capture-button {
     flex: 0 1 auto;
     padding: 10px 12px;
     font-size: 15px;
   }
 
-  .camera button.camera-switch-button {
+  .camera button.camera-switch-button,
+  .camera button.camera-file-button {
     flex: 0 0 46px;
     padding: 0;
   }

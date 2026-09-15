@@ -82,8 +82,16 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.relic-card-rarity { position: relative; display: inline-block; line-height: 1; letter-spacing: 0.06em; font-size: 12px; white-space: nowrap; }
-.relic-card-rarity-empty { color: rgba(255, 255, 255, 0.25); }
+/* 属性バッジと同じ暗いチップに乗せることで、雷属性など明るい背景でも星が埋もれないようにする */
+.relic-card-rarity {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.relic-card-rarity-stars { position: relative; display: inline-block; line-height: 1; letter-spacing: 0.06em; font-size: 12px; white-space: nowrap; }
+.relic-card-rarity-empty { color: rgba(255, 255, 255, 0.35); }
 .relic-card-rarity-filled { position: absolute; top: 0; left: 0; overflow: hidden; color: #f1d48d; white-space: nowrap; }
 
 /* ---- 名前 ---- */
