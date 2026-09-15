@@ -56,7 +56,6 @@ export default function ResultPage() {
       )}
       <RelicCard evaluation={evaluation} photo={state.photo} flippable />
 
-      {state.collectionSaved && <p className="relic-save-status">図鑑に保存しました。</p>}
       {state.collectionSaveError && <p className="relic-save-error" role="alert">{state.collectionSaveError}</p>}
       {deleteError && <p className="relic-save-error" role="alert">{deleteError}</p>}
       {/* 色相図がある遺物は、同じ数値をカード裏面に表示している。 */}
@@ -65,35 +64,33 @@ export default function ResultPage() {
           Y {evaluation.analysis.y.toFixed(2)} / I {evaluation.analysis.i.toFixed(2)} / Q {evaluation.analysis.q.toFixed(2)} / θ {Math.round(evaluation.analysis.hueAngle)}°
         </p>
       )}
-      {state.fromCollection ? (
-        <nav className="relic-collection-nav">
-          <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
-          <Link className="relic-nav-home" to="/" aria-label="ホームへ戻る" title="ホームへ戻る">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 11.5 12 4l8 7.5" />
-              <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
-              <path d="M10 20v-6h4v6" />
-            </svg>
-          </Link>
-          {state.relicId && (
-            <button className="relic-delete-button" type="button" onClick={() => setConfirmingDelete(true)}>
-              図鑑から削除
-            </button>
+      {/* ホームボタンは常に他ボタンの下の行に、中央揃えで置く */}
+      <nav className={state.fromCollection ? "relic-collection-nav" : undefined}>
+        <div className="relic-nav-row">
+          {state.fromCollection ? (
+            <>
+              <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
+              {state.relicId && (
+                <button className="relic-delete-button" type="button" onClick={() => setConfirmingDelete(true)}>
+                  図鑑から削除
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <Link className="relic-nav-primary" to="/CameraPage">別の写真を鑑定する</Link>
+              <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
+            </>
           )}
-        </nav>
-      ) : (
-        <nav>
-          <Link className="relic-nav-primary" to="/CameraPage">別の写真を鑑定する</Link>
-          <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
-          <Link className="relic-nav-home" to="/" aria-label="ホームへ戻る" title="ホームへ戻る">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 11.5 12 4l8 7.5" />
-              <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
-              <path d="M10 20v-6h4v6" />
-            </svg>
-          </Link>
-        </nav>
-      )}
+        </div>
+        <Link className="relic-nav-home" to="/" aria-label="ホームへ戻る" title="ホームへ戻る">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 11.5 12 4l8 7.5" />
+            <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
+            <path d="M10 20v-6h4v6" />
+          </svg>
+        </Link>
+      </nav>
 
       {confirmingDelete && (
         <div className="relic-delete-overlay" onClick={() => setConfirmingDelete(false)}>

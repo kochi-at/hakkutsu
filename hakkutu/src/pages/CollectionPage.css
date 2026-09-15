@@ -4,7 +4,8 @@
 .collection-header { display: flex; max-width: 920px; margin: 0 auto 28px; align-items: flex-end; justify-content: space-between; gap: 20px; text-align: left; }
 .collection-header h1 { margin: 4px 0 0; color: var(--relic-gold); font-size: clamp(28px, 5vw, 42px); }
 .collection-eyebrow { margin: 0; color: var(--relic-gold-dim); letter-spacing: .15em; }
-.collection-header a, .collection-empty a { color: var(--relic-gold); }
+/* ホームボタンは他ページと同じアイコンボタン(.relic-nav-home)なので、リンク色の指定から外す */
+.collection-header a:not(.relic-nav-home), .collection-empty a { color: var(--relic-gold); }
 .collection-status, .collection-error { margin: 40px auto; text-align: center; }
 .collection-error { color: #ffb4a8; }
 .collection-empty { max-width: 520px; margin: 64px auto; padding: 32px; border: 1px solid var(--relic-line); border-radius: 16px; background: var(--relic-panel); text-align: center; }

@@ -47,7 +47,13 @@ export default function CollectionPage() {
           <p className="collection-eyebrow">発掘記録</p>
           <h1>聖遺物図鑑</h1>
         </div>
-        <Link to="/">ホームへ戻る</Link>
+        <Link className="relic-nav-home" to="/" aria-label="ホームへ戻る" title="ホームへ戻る">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 11.5 12 4l8 7.5" />
+            <path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9" />
+            <path d="M10 20v-6h4v6" />
+          </svg>
+        </Link>
       </header>
 
       {loading && <p className="collection-status">図鑑を読み込んでいます…</p>}

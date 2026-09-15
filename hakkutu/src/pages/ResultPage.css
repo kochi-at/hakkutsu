@@ -378,15 +378,17 @@
 .relic-card-face .relic-card-footer { margin-top: auto; }
 
 /* ---- カード外の補足情報 ---- */
-.relic-save-status { margin: 8px 0 0; color: var(--relic-gold); font-size: 14px; text-align: center; }
 .relic-save-error { margin: 8px 0 0; color: #ffb4a8; font-size: 14px; text-align: center; }
 .relic-analysis { color: var(--relic-ink-dim); margin: 0 0 24px; font-size: 12px; opacity: 0.8; text-align: center; }
-.relic-result nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
+/* ボタン行を上、ホームボタンをその下の行に中央揃えで並べる */
+.relic-result nav { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.relic-nav-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
 .relic-result a { color: var(--relic-gold); }
 
-/* 他画面(Home/Camera/CameraPage)のボタンと同じパターンに揃える */
-.relic-result a.relic-nav-primary,
-.relic-result a.relic-nav-secondary {
+/* 他画面(Home/Camera/CameraPage)のボタンと同じパターンに揃える。
+   図鑑画面(.collection-page)からも同じ見た目で使えるよう、.relic-resultには限定しない */
+a.relic-nav-primary,
+a.relic-nav-secondary {
   display: inline-flex;
   align-items: center;
   padding: 12px 28px;
@@ -396,25 +398,25 @@
   text-decoration: none;
   transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
-.relic-result a.relic-nav-primary {
+a.relic-nav-primary {
   color: #100e0b;
   background: var(--relic-gold);
   border: 1px solid var(--relic-gold);
 }
-.relic-result a.relic-nav-primary:hover {
+a.relic-nav-primary:hover {
   background: #ffe6a8;
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.5);
 }
-.relic-result a.relic-nav-secondary {
+a.relic-nav-secondary {
   color: var(--relic-ink);
   background: var(--relic-panel);
   border: 1px solid var(--relic-line);
 }
-.relic-result a.relic-nav-secondary:hover {
+a.relic-nav-secondary:hover {
   border-color: var(--relic-gold-dim);
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.25);
 }
-.relic-result a.relic-nav-home {
+a.relic-nav-home {
   display: grid;
   place-items: center;
   width: 46px;
@@ -427,11 +429,11 @@
   text-decoration: none;
   transition: 0.2s;
 }
-.relic-result a.relic-nav-home:hover {
+a.relic-nav-home:hover {
   border-color: var(--relic-gold-dim);
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.28);
 }
-.relic-result a.relic-nav-home svg {
+a.relic-nav-home svg {
   width: 24px;
   height: 24px;
   fill: none;
@@ -440,9 +442,9 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.relic-result a.relic-nav-primary:focus-visible,
-.relic-result a.relic-nav-secondary:focus-visible,
-.relic-result a.relic-nav-home:focus-visible {
+a.relic-nav-primary:focus-visible,
+a.relic-nav-secondary:focus-visible,
+a.relic-nav-home:focus-visible {
   outline: 2px solid var(--relic-gold);
   outline-offset: 3px;
 }
