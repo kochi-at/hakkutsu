@@ -12,9 +12,24 @@ from appraisal import AppraisalResult
 
 LORE = {
     "name": "紅蓮の聖杯",
-    "name_reading": "ぐれんのせいはい",
+    "name_parts": [
+        {"text": "紅蓮", "reading": "ぐれん"},
+        {"text": "の", "reading": None},
+        {"text": "聖杯", "reading": "せいはい"},
+    ],
     "lore": "古代の王が使った架空の聖杯。",
-    "lore_reading": "こだいのおうがつかったかくうのせいはい。",
+    "lore_parts": [
+        {"text": "古代", "reading": "こだい"},
+        {"text": "の", "reading": None},
+        {"text": "王", "reading": "おう"},
+        {"text": "が", "reading": None},
+        {"text": "使", "reading": "つか"},
+        {"text": "った", "reading": None},
+        {"text": "架空", "reading": "かくう"},
+        {"text": "の", "reading": None},
+        {"text": "聖杯", "reading": "せいはい"},
+        {"text": "。", "reading": None},
+    ],
 }
 APPRAISAL = AppraisalResult(rarity=4, element="火", luminance_ratio=1.1, saturation=0.2,
                             hue_angle=20.0, attack=60, endurance=70, magic=50,
@@ -49,8 +64,8 @@ class RelicTests(unittest.TestCase):
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
             self.assertNotIn("rarity", schema_fields)
             self.assertNotIn("element", schema_fields)
-            self.assertIn("name_reading", schema_fields)
-            self.assertIn("lore_reading", schema_fields)
+            self.assertIn("name_parts", schema_fields)
+            self.assertIn("lore_parts", schema_fields)
 
     def test_llm_cannot_overwrite_rarity_and_element(self):
         response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
@@ -58,6 +73,16 @@ class RelicTests(unittest.TestCase):
         with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:
             client.return_value.__enter__.return_value.post.return_value = response
             self.assertEqual(relic.evaluate_photo(b"photo", "image/png", APPRAISAL), EVALUATION)
+
+    def test_kanji_without_reading_is_rejected(self):
+        invalid_lore = {**LORE, "name_parts": [{"text": "紅蓮の聖杯", "reading": None}]}
+        response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
+            "parts": [{"text": json.dumps(invalid_lore)}]}}]})
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:
+            client.return_value.__enter__.return_value.post.return_value = response
+            with self.assertRaises(HTTPException) as error:
+                relic.evaluate_photo(b"photo", "image/png", APPRAISAL)
+            self.assertEqual(error.exception.status_code, 502)
 
     def test_missing_key(self):
         with patch.dict(os.environ, {"GEMINI_API_KEY": ""}), patch("relic.httpx.Client") as client:

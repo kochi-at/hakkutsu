@@ -5,6 +5,16 @@ import "./ResultPage.css";
 
 const STAT_LABELS = { attack: "攻撃", endurance: "耐久", magic: "魔力" };
 
+function RubyText({ parts, fallback }) {
+  if (!Array.isArray(parts)) return fallback;
+
+  return parts.map((part, index) => part.reading ? (
+    <ruby key={`${part.text}-${index}`}>
+      {part.text}<rp>（</rp><rt>{part.reading}</rt><rp>）</rp>
+    </ruby>
+  ) : <span key={`${part.text}-${index}`}>{part.text}</span>);
+}
+
 export default function ResultPage() {
   const { state } = useLocation();
   const evaluation = state?.evaluation;
@@ -28,8 +38,7 @@ export default function ResultPage() {
       ) : (
         <>
           <p className="relic-eyebrow">伝説の聖遺物 鑑定書</p>
-          <h1>{evaluation.name}</h1>
-          <p className="relic-name-reading">{evaluation.name_reading}</p>
+          <h1><RubyText parts={evaluation.name_parts} fallback={evaluation.name} /></h1>
           {state.photo && <img className="relic-photo" src={state.photo} alt="鑑定した写真" />}
           <p className="relic-score">
             <span
@@ -51,8 +60,7 @@ export default function ResultPage() {
           </p>
           <section>
             <h2>語り継がれる伝説</h2>
-            <p>{evaluation.lore}</p>
-            <p className="relic-lore-reading">よみ：{evaluation.lore_reading}</p>
+            <p><RubyText parts={evaluation.lore_parts} fallback={evaluation.lore} /></p>
           </section>
           <section className="relic-stats">
             <h2>能力値</h2>
