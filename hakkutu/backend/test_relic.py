@@ -14,21 +14,21 @@ LORE = {
     "name": "紅蓮の聖杯",
     "name_parts": [
         {"text": "紅蓮", "reading": "ぐれん"},
-        {"text": "の", "reading": None},
+        {"text": "の", "reading": ""},
         {"text": "聖杯", "reading": "せいはい"},
     ],
     "lore": "古代の王が使った架空の聖杯。",
     "lore_parts": [
         {"text": "古代", "reading": "こだい"},
-        {"text": "の", "reading": None},
+        {"text": "の", "reading": ""},
         {"text": "王", "reading": "おう"},
-        {"text": "が", "reading": None},
+        {"text": "が", "reading": ""},
         {"text": "使", "reading": "つか"},
-        {"text": "った", "reading": None},
+        {"text": "った", "reading": ""},
         {"text": "架空", "reading": "かくう"},
-        {"text": "の", "reading": None},
+        {"text": "の", "reading": ""},
         {"text": "聖杯", "reading": "せいはい"},
-        {"text": "。", "reading": None},
+        {"text": "。", "reading": ""},
     ],
 }
 APPRAISAL = AppraisalResult(rarity=4, element="火", luminance_ratio=1.1, saturation=0.2,
@@ -75,7 +75,7 @@ class RelicTests(unittest.TestCase):
             self.assertEqual(relic.evaluate_photo(b"photo", "image/png", APPRAISAL), EVALUATION)
 
     def test_kanji_without_reading_is_rejected(self):
-        invalid_lore = {**LORE, "name_parts": [{"text": "紅蓮の聖杯", "reading": None}]}
+        invalid_lore = {**LORE, "name_parts": [{"text": "紅蓮の聖杯", "reading": ""}]}
         response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
             "parts": [{"text": json.dumps(invalid_lore)}]}}]})
         with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:

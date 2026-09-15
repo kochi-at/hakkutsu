@@ -14,7 +14,7 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 
 class RubyPart(BaseModel):
     text: str = Field(min_length=1, max_length=100)
-    reading: str | None = Field(default=None, max_length=100)
+    reading: str = Field(max_length=100)
 
 
 class RelicLore(BaseModel):
@@ -38,6 +38,27 @@ class RelicLore(BaseModel):
         return self
 
 
+# Geminiへは、対応していない制約や参照を除いた単純なJSON Schemaを送る。
+RUBY_PART_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "text": {"type": "string"},
+        "reading": {"type": "string"},
+    },
+    "required": ["text", "reading"],
+}
+RELIC_LORE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "name_parts": {"type": "array", "items": RUBY_PART_SCHEMA},
+        "lore": {"type": "string"},
+        "lore_parts": {"type": "array", "items": RUBY_PART_SCHEMA},
+    },
+    "required": ["name", "name_parts", "lore", "lore_parts"],
+}
+
+
 PROMPT = """あなたはファンタジー世界の聖遺物鑑定士です。日本語で回答してください。
 写真に写る主な物や人物の、目に見える形・色・服装・ポーズを観察し、
 それを伝説の聖遺物にこじつけて、壮大でユーモラスな鑑定をしてください。
@@ -49,8 +70,8 @@ name_partsにはnameを表示順に分割して入れ、全textを連結する�
 loreには架空の由来と、与えられた属性が宿った経緯、能力値の傾向が窺える逸話を100〜150字程度で入れる。
 lore_partsにはloreを表示順に分割して入れ、全textを連結するとloreと完全一致させる。
 各partsでは、漢字を含む語をtext、その読みをひらがなのreadingに入れる。
-漢字を含まない文字・句読点はtextに入れ、readingはnullにする。
-例: 「伝説の聖杯。」は[{"text":"伝説","reading":"でんせつ"},{"text":"の","reading":null},{"text":"聖杯","reading":"せいはい"},{"text":"。","reading":null}]。
+漢字を含まない文字・句読点はtextに入れ、readingは空文字にする。
+例: 「伝説の聖杯。」は[{"text":"伝説","reading":"でんせつ"},{"text":"の","reading":""},{"text":"聖杯","reading":"せいはい"},{"text":"。","reading":""}]。
 人物は聖遺物の守護者や継承者として扱い、身に着けた物やポーズから物語を作る。
 人物の名前・身元・人種・宗教・健康などは推測しない。容姿を侮辱しない。
 伝説・能力はすべて創作であり、実際の歴史や人物の事実として断言しない。
@@ -82,7 +103,7 @@ def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResul
                     ]}],
                     "generationConfig": {
                         "responseMimeType": "application/json",
-                        "responseJsonSchema": RelicLore.model_json_schema(),
+                        "responseJsonSchema": RELIC_LORE_SCHEMA,
                     },
                 },
             )
