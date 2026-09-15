@@ -18,6 +18,10 @@ function Camera({ onCapture }) {
   const [noiseAmount, setNoiseAmount] = useState(30);
   const [blurEnabled, setBlurEnabled] = useState(false);
   const [blurAmount, setBlurAmount] = useState(30);
+  const [colorEnabled, setColorEnabled] = useState(false);
+  const [colorAmount, setColorAmount] = useState(30);
+  const [spotlightEnabled, setSpotlightEnabled] = useState(false);
+  const [spotlightAmount, setSpotlightAmount] = useState(30);
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -122,6 +126,37 @@ const applyNoise = (context, width, height) => {
   context.putImageData(imageData, 0, 0);
 };
 
+const applySpotlight = (context, width, height) => {
+  if (!spotlightEnabled || spotlightAmount === 0) {
+    return;
+  }
+
+  const strength = spotlightAmount / 100;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const innerRadius = Math.min(width, height) * 0.2;
+  const outerRadius = Math.hypot(width, height) / 2;
+
+  context.save();
+  const centerLight = context.createRadialGradient(
+    centerX, centerY, 0, centerX, centerY, Math.min(width, height) * 0.48
+  );
+  centerLight.addColorStop(0, `rgba(255, 248, 218, ${0.38 * strength})`);
+  centerLight.addColorStop(1, "rgba(255, 248, 218, 0)");
+  context.fillStyle = centerLight;
+  context.fillRect(0, 0, width, height);
+
+  const edgeShade = context.createRadialGradient(
+    centerX, centerY, innerRadius, centerX, centerY, outerRadius
+  );
+  edgeShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+  edgeShade.addColorStop(0.55, "rgba(0, 0, 0, 0)");
+  edgeShade.addColorStop(1, `rgba(0, 0, 0, ${0.58 * strength})`);
+  context.fillStyle = edgeShade;
+  context.fillRect(0, 0, width, height);
+  context.restore();
+};
+
 const takePhoto = () => {
   const video = videoRef.current;
 
@@ -168,8 +203,9 @@ const takePhoto = () => {
   }
 
   const blurRadius = blurEnabled ? blurAmount * 0.12 : 0;
+  const saturation = colorEnabled ? 1 + colorAmount * 0.02 : 1;
   const blurPadding = Math.ceil(blurRadius * 2);
-  context.filter = blurRadius > 0 ? `blur(${blurRadius}px)` : "none";
+  context.filter = `blur(${blurRadius}px) saturate(${saturation})`;
   context.drawImage(
     video,
 
@@ -185,6 +221,7 @@ const takePhoto = () => {
   );
   context.filter = "none";
 
+  applySpotlight(context, canvas.width, canvas.height);
   applyNoise(context, canvas.width, canvas.height);
 
   const imageData = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
@@ -265,6 +302,36 @@ const handleFileSelect = async (event) => {
                 <path d="M9.2 15.2c.5 1.1 1.4 1.7 2.8 1.9" />
               </svg>
             </button>
+
+            <button
+              className={`camera-color-button${colorEnabled ? " is-active" : ""}`}
+              type="button"
+              onClick={() => setColorEnabled((current) => !current)}
+              aria-label={colorEnabled ? "カラーフィルタを解除" : "カラーフィルタを使用"}
+              aria-pressed={colorEnabled}
+              title="カラーフィルタ"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" />
+                <circle cx="9" cy="9.5" r="1.5" />
+                <circle cx="15" cy="9.5" r="1.5" />
+                <circle cx="12" cy="15" r="1.5" />
+              </svg>
+            </button>
+
+            <button
+              className={`camera-spotlight-button${spotlightEnabled ? " is-active" : ""}`}
+              type="button"
+              onClick={() => setSpotlightEnabled((current) => !current)}
+              aria-label={spotlightEnabled ? "スポットライトを解除" : "スポットライトを使用"}
+              aria-pressed={spotlightEnabled}
+              title="スポットライト"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="3.2" />
+                <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
+              </svg>
+            </button>
           </div>
 
           <div className="camera-preview">
@@ -273,8 +340,17 @@ const handleFileSelect = async (event) => {
               autoPlay
               playsInline
               muted
-              style={{ filter: blurEnabled ? `blur(${blurAmount * 0.12}px)` : "none" }}
+              style={{
+                filter: `${blurEnabled ? `blur(${blurAmount * 0.12}px)` : ""} ${colorEnabled ? `saturate(${1 + colorAmount * 0.02})` : ""}`.trim() || "none",
+              }}
             />
+            {spotlightEnabled && spotlightAmount > 0 && (
+              <div
+                className="camera-spotlight-preview"
+                style={{ "--spotlight-strength": spotlightAmount / 100 }}
+                aria-hidden="true"
+              />
+            )}
             {noiseEnabled && noiseAmount > 0 && (
               <canvas
                 ref={noisePreviewRef}
@@ -363,6 +439,42 @@ const handleFileSelect = async (event) => {
                 step="1"
                 value={blurAmount}
                 onChange={(event) => setBlurAmount(Number(event.target.value))}
+              />
+            </div>
+          )}
+
+          {colorEnabled && (
+            <div className="camera-color-settings">
+              <label htmlFor="camera-color-amount">
+                鮮やかさ
+                <output>{colorAmount}%</output>
+              </label>
+              <input
+                id="camera-color-amount"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={colorAmount}
+                onChange={(event) => setColorAmount(Number(event.target.value))}
+              />
+            </div>
+          )}
+
+          {spotlightEnabled && (
+            <div className="camera-spotlight-settings">
+              <label htmlFor="camera-spotlight-amount">
+                スポットライト
+                <output>{spotlightAmount}%</output>
+              </label>
+              <input
+                id="camera-spotlight-amount"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={spotlightAmount}
+                onChange={(event) => setSpotlightAmount(Number(event.target.value))}
               />
             </div>
           )}

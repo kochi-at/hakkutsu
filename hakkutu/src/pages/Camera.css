@@ -35,6 +35,20 @@
   mix-blend-mode: overlay;
 }
 
+.camera-spotlight-preview {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center,
+      rgba(255, 248, 218, calc(var(--spotlight-strength) * 0.38)) 0%,
+      rgba(255, 248, 218, 0) 48%),
+    radial-gradient(circle at center,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, calc(var(--spotlight-strength) * 0.58)) 100%);
+}
+
 .camera-controls {
   display: flex;
   flex-wrap: nowrap;
@@ -115,7 +129,9 @@
 }
 
 .camera .camera-filter-toolbar .camera-noise-button,
-.camera .camera-filter-toolbar .camera-blur-button {
+.camera .camera-filter-toolbar .camera-blur-button,
+.camera .camera-filter-toolbar .camera-color-button,
+.camera .camera-filter-toolbar .camera-spotlight-button {
   display: grid;
   width: 46px;
   height: 46px;
@@ -127,7 +143,9 @@
 }
 
 .camera-noise-button svg,
-.camera-blur-button svg {
+.camera-blur-button svg,
+.camera-color-button svg,
+.camera-spotlight-button svg {
   width: 24px;
   height: 24px;
   fill: none;
@@ -140,7 +158,9 @@
 }
 
 .camera button.camera-noise-button.is-active,
-.camera button.camera-blur-button.is-active {
+.camera button.camera-blur-button.is-active,
+.camera button.camera-color-button.is-active,
+.camera button.camera-spotlight-button.is-active {
   color: #100e0b;
   border-color: #f1d48d;
   background: #f1d48d;
@@ -148,7 +168,9 @@
 }
 
 .camera-noise-settings,
-.camera-blur-settings {
+.camera-blur-settings,
+.camera-color-settings,
+.camera-spotlight-settings {
   width: min(100%, 430px);
   padding: 14px 18px;
   border: 1px solid #5c4c2f;
@@ -157,7 +179,9 @@
 }
 
 .camera-noise-settings label,
-.camera-blur-settings label {
+.camera-blur-settings label,
+.camera-color-settings label,
+.camera-spotlight-settings label {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
@@ -166,13 +190,17 @@
 }
 
 .camera-noise-settings output,
-.camera-blur-settings output {
+.camera-blur-settings output,
+.camera-color-settings output,
+.camera-spotlight-settings output {
   color: #f1d48d;
   font-variant-numeric: tabular-nums;
 }
 
 .camera-noise-settings input[type="range"],
-.camera-blur-settings input[type="range"] {
+.camera-blur-settings input[type="range"],
+.camera-color-settings input[type="range"],
+.camera-spotlight-settings input[type="range"] {
   width: 100%;
   accent-color: #f1d48d;
   cursor: pointer;
