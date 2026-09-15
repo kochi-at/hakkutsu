@@ -45,9 +45,16 @@ export default function ResultPage() {
       <p className="relic-analysis">
         Y {evaluation.analysis.y.toFixed(2)} / I {evaluation.analysis.i.toFixed(2)} / Q {evaluation.analysis.q.toFixed(2)} / θ {Math.round(evaluation.analysis.hueAngle)}°
       </p>
-      <nav>
-        <Link className="relic-nav-primary" to="/CameraPage">別の写真を鑑定する</Link>
-        <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
+      <nav className={state.fromCollection ? "relic-nav-collection" : undefined}>
+        {!state.fromCollection && (
+          <Link className="relic-nav-primary" to="/CameraPage">別の写真を鑑定する</Link>
+        )}
+        <div className="relic-nav-row">
+          <Link className="relic-nav-secondary" to="/collection">図鑑を見る</Link>
+          {state.fromCollection && state.relicId && (
+            <button className="relic-nav-secondary" type="button" onClick={handleDelete}>図鑑から削除</button>
+          )}
+        </div>
         <Link className="relic-nav-home" to="/" aria-label="ホームへ戻る" title="ホームへ戻る">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 11.5 12 4l8 7.5" />
@@ -55,9 +62,6 @@ export default function ResultPage() {
             <path d="M10 20v-6h4v6" />
           </svg>
         </Link>
-        {state.fromCollection && state.relicId && (
-          <button className="relic-delete-button" type="button" onClick={handleDelete}>図鑑から削除</button>
-        )}
       </nav>
     </main>
   );
