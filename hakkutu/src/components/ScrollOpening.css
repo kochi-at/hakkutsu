@@ -1,0 +1,47 @@
+.scroll-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.scroll-opening-panel {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(180deg, #e8d3a0, #c9a86a);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.25);
+}
+
+.scroll-opening-panel--top {
+  top: 0;
+  border-bottom: 4px solid #8a6b34;
+}
+
+.scroll-opening-panel--bottom {
+  bottom: 0;
+  border-top: 4px solid #8a6b34;
+}
+
+.scroll-opening--play .scroll-opening-panel--top {
+  animation: scroll-opening-up 0.8s cubic-bezier(0.6, 0, 0.3, 1) forwards;
+}
+
+.scroll-opening--play .scroll-opening-panel--bottom {
+  animation: scroll-opening-down 0.8s cubic-bezier(0.6, 0, 0.3, 1) forwards;
+}
+
+@keyframes scroll-opening-up {
+  to { transform: translateY(-100%); }
+}
+
+@keyframes scroll-opening-down {
+  to { transform: translateY(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-opening {
+    display: none;
+  }
+}
