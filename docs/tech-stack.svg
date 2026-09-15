@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="930" viewBox="0 0 1600 930" font-family="Noto Sans CJK JP, Noto Sans CJK TC, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a6a3b"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+    <style>
+      .panel{fill:#fffdf8;stroke:#d9c7a3;stroke-width:2}
+      .h{font-size:26px;font-weight:700;fill:#3b2a14}
+      .sub{font-size:15px;fill:#8a6a3b;font-weight:700;letter-spacing:1px}
+      .t{font-size:19px;font-weight:700;fill:#2b2118}
+      .d{font-size:14px;fill:#6b5a44}
+      .chip{rx:8}
+      .lbl{font-size:14px;fill:#8a6a3b;font-weight:700}
+    </style>
+  </defs>
+
+  <rect width="1600" height="930" fill="#f4ecdd"/>
+
+  <!-- Title -->
+  <text x="60" y="78" font-size="40" font-weight="800" fill="#3b2a14">発掘 hakkutsu — 技術スタック</text>
+  <text x="60" y="112" font-size="18" fill="#6b5a44">写真を撮る → 画像解析でレア度・属性・能力値を算出 → Geminiが伝承を創作 → 図鑑に保存</text>
+
+  <!-- ===== Column 1: Browser ===== -->
+  <rect class="panel" x="60" y="150" width="340" height="490" rx="18"/>
+  <text class="sub" x="84" y="186">CLIENT</text>
+  <text class="h" x="84" y="220">ブラウザ（スマホ）</text>
+
+  <g transform="translate(84,245)">
+    <rect class="chip" width="292" height="72" fill="#e8f4fb"/>
+    <text class="t" x="16" y="30">MediaDevices API</text>
+    <text class="d" x="16" y="54">getUserMedia でカメラ撮影</text>
+  </g>
+  <g transform="translate(84,333)">
+    <rect class="chip" width="292" height="72" fill="#eef0ff"/>
+    <text class="t" x="16" y="30">IndexedDB</text>
+    <text class="d" x="16" y="54">聖遺物図鑑をローカル保存</text>
+  </g>
+
+  <!-- ===== Column 2: Frontend ===== -->
+  <rect class="panel" x="470" y="150" width="340" height="490" rx="18"/>
+  <text class="sub" x="494" y="186">FRONTEND</text>
+  <text class="h" x="494" y="220">SPA</text>
+
+  <g transform="translate(494,245)">
+    <rect class="chip" width="292" height="72" fill="#e3f6fb"/>
+    <circle cx="30" cy="36" r="14" fill="none" stroke="#149eca" stroke-width="2.5"/>
+    <text class="t" x="56" y="30">React 19</text>
+    <text class="d" x="56" y="54">JavaScript (JSX) / CSS</text>
+  </g>
+  <g transform="translate(494,333)">
+    <rect class="chip" width="292" height="72" fill="#fdeef1"/>
+    <text class="t" x="16" y="30">React Router 7</text>
+    <text class="d" x="16" y="54">Home / Camera / Result / Collection</text>
+  </g>
+  <g transform="translate(494,421)">
+    <rect class="chip" width="292" height="72" fill="#f1ecff"/>
+    <text class="t" x="16" y="30">Vite 8</text>
+    <text class="d" x="16" y="54">開発サーバー・ビルド</text>
+  </g>
+  <g transform="translate(494,509)">
+    <rect class="chip" width="292" height="72" fill="#fff4e0"/>
+    <text class="t" x="16" y="30">oxlint</text>
+    <text class="d" x="16" y="54">Lint</text>
+  </g>
+
+  <!-- ===== Column 3: Backend ===== -->
+  <rect class="panel" x="880" y="150" width="340" height="490" rx="18"/>
+  <text class="sub" x="904" y="186">BACKEND</text>
+  <text class="h" x="904" y="220">鑑定 API</text>
+
+  <g transform="translate(904,245)">
+    <rect class="chip" width="292" height="72" fill="#e4f7f1"/>
+    <text class="t" x="16" y="30">Python + FastAPI</text>
+    <text class="d" x="16" y="54">Uvicorn / Pydantic / multipart</text>
+  </g>
+  <g transform="translate(904,333)">
+    <rect class="chip" width="292" height="112" fill="#eaf2e3"/>
+    <text class="t" x="16" y="30">NumPy + Pillow</text>
+    <text class="d" x="16" y="54">画像解析（LLM不使用・決定的）</text>
+    <text class="d" x="16" y="78">DCT → 耐久 / YIQ → レア度</text>
+    <text class="d" x="16" y="100">k-means支配色 → 属性</text>
+  </g>
+  <g transform="translate(904,461)">
+    <rect class="chip" width="292" height="72" fill="#f3f0e8"/>
+    <text class="t" x="16" y="30">httpx / python-dotenv</text>
+    <text class="d" x="16" y="54">Gemini呼び出し・設定読込</text>
+  </g>
+  <g transform="translate(904,549)">
+    <rect class="chip" width="292" height="72" fill="#fff4e0"/>
+    <text class="t" x="16" y="30">unittest</text>
+    <text class="d" x="16" y="54">鑑定・アップロードのテスト</text>
+  </g>
+
+  <!-- ===== Column 4: AI ===== -->
+  <rect class="panel" x="1290" y="150" width="250" height="490" rx="18"/>
+  <text class="sub" x="1314" y="186">AI</text>
+  <text class="h" x="1314" y="220">生成AI</text>
+  <g transform="translate(1314,245)">
+    <rect class="chip" width="202" height="136" fill="#e8efff"/>
+    <path d="M28 22 Q28 44 50 44 Q28 44 28 66 Q28 44 6 44 Q28 44 28 22z" fill="#4f7cf7" transform="translate(4,-4)"/>
+    <text class="t" x="16" y="98">Google Gemini</text>
+    <text class="d" x="16" y="122">gemini-3.6-flash</text>
+  </g>
+  <text class="d" x="1314" y="412">名前・伝承（ルビ付き）</text>
+  <text class="d" x="1314" y="434">を創作</text>
+
+  <!-- Flow arrows -->
+  <line x1="400" y1="280" x2="466" y2="280" stroke="#8a6a3b" stroke-width="3" marker-end="url(#arr)"/>
+  <line x1="810" y1="280" x2="876" y2="280" stroke="#8a6a3b" stroke-width="3" marker-end="url(#arr)"/>
+  <text class="lbl" x="818" y="266">POST</text>
+  <text class="lbl" x="818" y="304">写真</text>
+  <line x1="1220" y1="310" x2="1286" y2="310" stroke="#8a6a3b" stroke-width="3" marker-end="url(#arr)"/>
+  <text class="lbl" x="1226" y="296">REST</text>
+
+  <!-- ===== Deploy ===== -->
+  <g transform="translate(0,-70)">
+  <rect x="60" y="740" width="1480" height="220" rx="18" fill="#3b2a14"/>
+  <text x="84" y="778" font-size="15" font-weight="700" fill="#e7c98f" letter-spacing="1">DEPLOY</text>
+  <text x="84" y="810" font-size="26" font-weight="700" fill="#fff8ea">GitHub への push で自動デプロイ</text>
+
+  <!-- GitHub -->
+  <g transform="translate(84,835)">
+    <rect width="250" height="100" rx="12" fill="#24292f" stroke="#57606a"/>
+    <text x="20" y="42" font-size="22" font-weight="700" fill="#fff">GitHub</text>
+    <text x="20" y="72" font-size="14" fill="#c9d1d9">kochi-at/hakkutsu</text>
+  </g>
+  <path d="M334 865 C 400 865, 400 860, 470 860" fill="none" stroke="#e7c98f" stroke-width="3" marker-end="url(#arr)"/>
+  <path d="M334 905 C 600 905, 700 905, 880 905" fill="none" stroke="#e7c98f" stroke-width="3" marker-end="url(#arr)"/>
+
+  <!-- Vercel -->
+  <g transform="translate(474,820)">
+    <rect width="336" height="72" rx="12" fill="#000" stroke="#555"/>
+    <path d="M22 50 L38 22 L54 50 z" fill="#fff"/>
+    <text x="70" y="36" font-size="22" font-weight="700" fill="#fff">Vercel</text>
+    <text x="70" y="58" font-size="13" fill="#bbb">hakkutu/ · vite build → dist</text>
+  </g>
+  <!-- Render -->
+  <g transform="translate(884,868)">
+    <rect width="336" height="72" rx="12" fill="#1b1f3b" stroke="#4b4f7a"/>
+    <circle cx="36" cy="36" r="14" fill="none" stroke="#8b8cff" stroke-width="4"/>
+    <text x="64" y="36" font-size="22" font-weight="700" fill="#fff">Render <tspan font-size="14" fill="#bbb">(free / render.yaml)</tspan></text>
+    <text x="64" y="58" font-size="13" fill="#bbb">hakkutu/backend · uvicorn · /health</text>
+  </g>
+
+  <!-- env notes -->
+  <g font-size="14" fill="#e7dcc6">
+    <text x="1256" y="790" font-weight="700" fill="#e7c98f">環境変数</text>
+    <text x="1256" y="818">Vercel: VITE_API_URL</text>
+    <text x="1256" y="842">Render: GEMINI_API_KEY</text>
+    <text x="1310" y="866">GEMINI_MODEL</text>
+    <text x="1310" y="890">FRONTEND_ORIGINS (CORS)</text>
+    <text x="1310" y="914">ENABLE_DEBUG_ROUTES</text>
+  </g>
+  </g>
+</svg>
