@@ -29,7 +29,7 @@ function Home() {
       {showOpening && <ScrollOpening onDone={handleOpeningDone} />}
       <p className="home-eyebrow">遺物鑑定所</p>
       <h1>聖遺物鑑定</h1>
-      <p className="home-lead">写真を撮って、そこに眠る聖遺物の伝説を鑑定しましょう。</p>
+      <p className="home-lead">写真を撮って日常に眠る聖遺物の<br></br>伝説を鑑定しましょう。</p>
       <div className="home-actions">
         <button type="button" className="capture-button" onClick={() => navigate('/CameraPage')}>
           <svg className="capture-button-icon" viewBox="0 0 24 24" aria-hidden="true">
