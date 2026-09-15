@@ -1,0 +1,2 @@
+# FastAPIはRenderへデプロイするため、Vercelには含めない。
+backend
