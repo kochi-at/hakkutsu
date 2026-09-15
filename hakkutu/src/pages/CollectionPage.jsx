@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getRelics } from "../lib/relicDb";
 import RelicCard from "../components/RelicCard";
+import ScrollOpening from "../components/ScrollOpening";
 import "./ResultPage.css";
 import "./CollectionPage.css";
 
@@ -9,6 +10,7 @@ export default function CollectionPage() {
   const [relics, setRelics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showOpening, setShowOpening] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export default function CollectionPage() {
 
   return (
     <main className="collection-page">
+      {showOpening && <ScrollOpening onDone={() => setShowOpening(false)} />}
       <header className="collection-header">
         <div>
           <p className="collection-eyebrow">発掘記録</p>
@@ -64,6 +67,7 @@ export default function CollectionPage() {
               <RelicCard evaluation={relic.evaluation} photo={relic.photo} />
               <button className="collection-card-open" type="button" onClick={() => openRelic(relic)} aria-label={`${relic.evaluation.name}を大きく表示`} />
             </div>
+            
             <footer className="collection-card-actions">
               <time dateTime={new Date(relic.createdAt).toISOString()}>{new Date(relic.createdAt).toLocaleString("ja-JP")}</time>
             </footer>
