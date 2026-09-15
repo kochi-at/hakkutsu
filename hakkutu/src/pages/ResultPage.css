@@ -5,6 +5,9 @@
 .relic-back-button { align-self: center; width: 100%; max-width: 380px; box-sizing: border-box; margin: 0 0 16px; padding: 10px 15px; border: 1px solid var(--relic-line); border-radius: 999px; background: var(--relic-panel); text-align: left; text-decoration: none; }
 .relic-back-button:hover { border-color: var(--relic-gold-dim); }
 
+/* 図鑑から開いたときに再生する鑑定演出(DigReveal)の土台 */
+.relic-reveal-wrap { position: relative; width: 100%; max-width: 380px; margin-inline: auto; }
+
 /* ---- カード外枠(レアリティ) ---- */
 .relic-card {
   width: 100%;
@@ -256,5 +259,77 @@
   outline-offset: 3px;
 }
 
-.relic-delete-button { padding: 0; border: 0; color: #ffb4a8; background: transparent; font: inherit; text-decoration: underline; cursor: pointer; }
-.relic-delete-button:hover { color: #ffd0c9; }
+/* 図鑑から開いたとき: 削除は一段小さくして、中央のHomeボタンを軸にした3つ並びに収める */
+.relic-collection-nav .relic-delete-button {
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+/* 「図鑑を見る」(relic-nav-secondary)と同じピル型に揃え、削除であることが分かるよう色だけ変える */
+.relic-delete-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 28px;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+  color: #ffb4a8;
+  background: var(--relic-panel);
+  border: 1px solid var(--relic-line);
+}
+.relic-delete-button:hover {
+  border-color: #ffb4a8;
+  box-shadow: 0 0 16px rgba(255, 180, 168, 0.25);
+}
+.relic-delete-button:focus-visible {
+  outline: 2px solid #ffb4a8;
+  outline-offset: 3px;
+}
+
+/* ---- 削除確認オーバーレイ ---- */
+.relic-delete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 6, 6, 0.72);
+  backdrop-filter: blur(2px);
+}
+.relic-delete-dialog {
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 22px;
+  border-radius: 16px;
+  background: var(--relic-panel);
+  border: 1px solid var(--relic-line);
+  text-align: center;
+  box-shadow: 0 22px 48px -22px rgba(0, 0, 0, 0.7);
+}
+.relic-delete-dialog-title { margin: 0 0 8px; color: var(--relic-ink); font-size: 16px; line-height: 1.6; }
+.relic-delete-dialog-body { margin: 0 0 22px; color: var(--relic-ink-dim); font-size: 13px; }
+.relic-delete-dialog-actions { display: flex; justify-content: center; gap: 12px; }
+.relic-delete-cancel, .relic-delete-confirm {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 22px;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.relic-delete-cancel { color: var(--relic-ink); background: transparent; border: 1px solid var(--relic-line); }
+.relic-delete-cancel:hover { border-color: var(--relic-gold-dim); }
+.relic-delete-confirm { color: #100e0b; background: #ffb4a8; border: 1px solid #ffb4a8; }
+.relic-delete-confirm:hover { background: #ffd0c9; box-shadow: 0 0 16px rgba(255, 180, 168, 0.4); }
+.relic-delete-cancel:focus-visible, .relic-delete-confirm:focus-visible {
+  outline: 2px solid var(--relic-gold);
+  outline-offset: 3px;
+}
