@@ -167,6 +167,13 @@
   box-shadow: 0 0 16px rgba(241, 212, 141, 0.4);
 }
 
+/* CameraPageの「操作列の最後を主要ボタンにする」指定からフィルタ列を除外する。 */
+.camera-page .camera .camera-filter-toolbar button:not(.is-active) {
+  color: #efe6d2;
+  border-color: #5c4c2f;
+  background: #1c1811;
+}
+
 .camera-noise-settings,
 .camera-blur-settings,
 .camera-color-settings,
