@@ -185,23 +185,15 @@ const handleFileSelect = (event) => {
             }}
           >
             <button
+              className="camera-capture-button"
               onClick={takePhoto}
-              style={{
-                padding: "12px 30px",
-                fontSize: "18px",
-                cursor: "pointer",
-              }}
             >
               撮影
             </button>
 
             <button
+              className="camera-file-button"
               onClick={() => fileInputRef.current?.click()}
-              style={{
-                padding: "12px 30px",
-                fontSize: "18px",
-                cursor: "pointer",
-              }}
             >
               ファイルから選択
             </button>
