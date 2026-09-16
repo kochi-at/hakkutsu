@@ -78,17 +78,29 @@ class RelicTests(unittest.TestCase):
             self.assertIn("レア度4", prompt)
             self.assertIn("火", prompt)
             system_prompt = request["json"]["systemInstruction"]["parts"][0]["text"]
-            self.assertIn("name_partsとlore_parts", system_prompt)
+            self.assertIn("名前と来歴をname_partsとlore_parts", system_prompt)
             self.assertIn("漢字を含む語をtext、その読みをひらがなのreading", system_prompt)
             self.assertIn("その内容は読まず、形や模様として扱う", system_prompt)
-            self.assertIn("name・name_parts・lore・lore_partsに引用、言い換え、翻訳しない", system_prompt)
+            self.assertIn("name_parts・lore_partsに引用、言い換え、翻訳しない", system_prompt)
             self.assertIn("文字以外の形・色・服装・ポーズだけを根拠", system_prompt)
             # LLMに返させるスキーマにレア度と属性を含めない。
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
             self.assertNotIn("rarity", schema_fields)
             self.assertNotIn("element", schema_fields)
+            self.assertNotIn("name", schema_fields)
+            self.assertNotIn("lore", schema_fields)
             self.assertIn("name_parts", schema_fields)
             self.assertIn("lore_parts", schema_fields)
+
+    def test_name_and_lore_are_built_from_parts(self):
+        parts_only = {"name_parts": LORE["name_parts"], "lore_parts": LORE["lore_parts"]}
+        response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
+            "parts": [{"text": json.dumps(parts_only)}]}}]})
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:
+            client.return_value.__enter__.return_value.post.return_value = response
+            result = relic.evaluate_photo(b"photo", "image/png", APPRAISAL)
+        self.assertEqual(result["name"], LORE["name"])
+        self.assertEqual(result["lore"], LORE["lore"])
 
     def test_llm_cannot_overwrite_rarity_and_element(self):
         response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
