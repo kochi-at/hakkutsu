@@ -67,6 +67,12 @@
   background: repeating-conic-gradient(from 0deg, rgba(241, 212, 141, 0.22) 0deg 5deg, transparent 5deg 28deg);
   animation: dig-rays-spin 11s linear infinite;
 }
+.dig-reveal[data-tier] .dig-reveal-rays::before {
+  background: var(--relic-tier-frame);
+  -webkit-mask-image: repeating-conic-gradient(from 0deg, #000 0deg 5deg, transparent 5deg 28deg);
+  mask-image: repeating-conic-gradient(from 0deg, #000 0deg 5deg, transparent 5deg 28deg);
+  opacity: 0.22;
+}
 .dig-reveal[data-phase="flash"] .dig-reveal-rays,
 .dig-reveal[data-phase="rolling"] .dig-reveal-rays,
 .dig-reveal[data-phase="done"] .dig-reveal-rays {
@@ -185,6 +191,17 @@
   opacity: 0;
   transform: scale(0.4) rotate(-8deg);
   animation: dig-stamp-in 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+
+/* 結果が届いた後の文字と星は、結果カードの外枠と同じ色で表示する */
+.dig-reveal[data-tier] .dig-rarity-num,
+.dig-reveal[data-tier] .dig-stars-filled,
+.dig-reveal[data-tier] .dig-tier {
+  background: var(--relic-tier-frame);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 @keyframes dig-rays-spin {
