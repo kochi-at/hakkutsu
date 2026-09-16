@@ -83,6 +83,9 @@ class RelicTests(unittest.TestCase):
             self.assertIn("その内容は読まず、形や模様として扱う", system_prompt)
             self.assertIn("name_parts・lore_partsに引用、言い換え、翻訳しない", system_prompt)
             self.assertIn("文字以外の形・色・服装・ポーズだけを根拠", system_prompt)
+            self.assertIn("レア度が1の場合に限り", system_prompt)
+            self.assertIn("聖遺物としての価値の低さ", system_prompt)
+            self.assertIn("人物の容姿・能力・人格・属性は批判や侮辱の対象にしない", system_prompt)
             # LLMに返させるスキーマにレア度と属性を含めない。
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
             self.assertNotIn("rarity", schema_fields)
