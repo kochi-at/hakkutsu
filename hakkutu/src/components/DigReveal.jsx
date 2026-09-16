@@ -45,6 +45,7 @@ function ZigzagScanIcon() {
 const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = true, onReveal, onComplete, onCancel }, ref) {
   const rarityRef = useRef(null);
   const starsRef = useRef(null);
+  const legendSoundRef = useRef(null);
   // 実際の鑑定結果(evaluation)が届くまでは "inspecting" のまま待機し続ける。
   // 待ち時間は呼び出し側の非同期処理の長さがそのまま演出時間になる。
   const [phase, setPhase] = useState("inspecting"); // inspecting -> flash -> rolling -> done
@@ -52,6 +53,10 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
 
   const finish = () => {
     if (doneRef.current) return;
+    if (legendSoundRef.current) {
+      legendSoundRef.current.pause();
+      legendSoundRef.current.currentTime = 0;
+    }
     doneRef.current = true;
     onComplete();
   };
@@ -59,6 +64,7 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
   useEffect(() => {
     if (!evaluation || !revealStarted) return;
 
+    const legendSound = legendSoundRef.current;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
       finish();
@@ -72,6 +78,15 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
       setPhase("flash");
       await sleep(TIMING.flash);
       if (cancelled) return;
+      if (digTier(evaluation.rarity) === "レジェンド" && legendSound) {
+        legendSound.currentTime = 0;
+        legendSound.volume = 0.45;
+        await legendSound.play().catch(() => {
+          // ブラウザの自動再生制限により再生できない場合も、演出自体は続行する。
+        });
+        if (cancelled) return;
+      }
+      // 初回の音声デコードを待ち、実際の再生開始と星の表示を同期する。
       setPhase("rolling");
       await animateRarity(evaluation.rarity, TIMING.rollDuration, rarityRef, starsRef);
       if (cancelled) return;
@@ -85,6 +100,10 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
     run();
     return () => {
       cancelled = true;
+      if (legendSound) {
+        legendSound.pause();
+        legendSound.currentTime = 0;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [evaluation, revealStarted]);
@@ -105,6 +124,9 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
       data-phase={phase}
       data-tier={evaluation ? digTier(evaluation.rarity) : undefined}
     >
+      {evaluation && digTier(evaluation.rarity) === "レジェンド" && (
+        <audio ref={legendSoundRef} src="/sounds/legend-reveal.mp3" preload="auto" />
+      )}
       <div className="dig-reveal-rays" aria-hidden="true" />
       <div className="dig-reveal-flash" aria-hidden="true" />
 
