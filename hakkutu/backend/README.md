@@ -75,9 +75,9 @@ MOCK_GEMINI=false
 
 `rarity`(1〜5)・`element`(火・水・木・雷)・`stats`(攻撃・耐久・魔力、いずれも0〜100)は
 すべて `appraisal.py` の画像解析で決まる値で、Geminiの応答では上書きしません。
-Geminiに返させるのは `name`・`name_parts`・`lore`・`lore_parts` の4つだけです。
-`name_parts` と `lore_parts` は漢字に読み仮名を振るための分割で、
-全 `text` を連結すると元の `name`・`lore` と完全に一致する必要があります(一致しない応答は拒否します)。
+Geminiに返させるのは `name_parts`・`lore_parts` の2つだけです。
+`name_parts` と `lore_parts` は漢字に読み仮名を振るための分割で、FastAPIが各 `text` を連結して
+`name`・`lore` を組み立てます。そのため、Geminiに本文とpartsを重複して生成させません。
 `analysis` は判定の根拠となった数値で、フロントエンドの解析値表示に使います。
 `colorMap` はカード裏面の色相図を描くためのデータです。`points` は対象領域から一様に間引いた
 画素240個の `[I, Q, 色]`、`clusters` は属性判定に使ったk-meansの3クラスタで、`share` は
