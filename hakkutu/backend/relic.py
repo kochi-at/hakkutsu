@@ -89,7 +89,7 @@ PROMPT = """あなたはファンタジー世界の聖遺物鑑定士です。�
 漢字には必ず読み仮名を付けるため、名前と来歴をname_partsとlore_partsに分解してください。
 レア度・属性・能力値(攻撃/耐久/魔力)は鑑定機が計測済みの値として与えられます。これらは変更できません。
 与えられたレア度・属性・能力値に矛盾しない名前と来歴を創作してください。
-レア度が1の場合に限り、lore_partsの解説は、聖遺物としての価値の低さ、役に立たなさ、みすぼらしさを容赦なく指摘する、辛辣で大げさな酷評にしてください。ただし、笑える創作表現に留め、写真に人物が写っていても人物の容姿・能力・人格・属性は批判や侮辱の対象にしないでください。
+レア度が1の場合に限り、lore_partsは「最低評価の外れ聖遺物」として、対象物の価値のなさ、役に立たなさ、みすぼらしさを最初から最後まで容赦なくこき下ろす、辛辣で大げさな酷評にしてください。対象物を褒める表現、価値や長所を認める表現、最後に救いや希望を添える表現は禁止です。各文に少なくとも一つ欠点か失敗を入れ、読んだ人が笑えるほど散々な鑑定にしてください。この酷評は必須で、省略できません。ただし、写真に人物が写っていても、人物の容姿・能力・人格・属性は批判や侮辱の対象にしないでください。
 レア度が2以上の場合は、通常の壮大でユーモラスな鑑定にしてください。
 name_partsには創作した聖遺物名を表示順に分割して入れる。
 lore_partsには架空の由来と、与えられた属性が宿った経緯、能力値の傾向が窺える逸話を、全textの合計が100〜150字程度になるよう表示順に分割して入れる。
@@ -114,6 +114,11 @@ def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResul
     if not api_key or api_key == "your_api_key_here":
         raise HTTPException(503, "backend/.env に GEMINI_API_KEY を設定してください")
     model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+    rarity_instruction = (
+        "最優先指示: レア度1です。lore_partsでは対象物を最低評価の外れ聖遺物として、"
+        "一切褒めず、救いや長所も与えず、各文で欠点または失敗を挙げて徹底的に酷評してください。"
+        if appraisal.rarity == 1 else ""
+    )
     try:
         with httpx.Client(timeout=90.0) as client:
             response = client.post(
@@ -126,7 +131,7 @@ def evaluate_photo(contents: bytes, content_type: str, appraisal: AppraisalResul
                                  f"鑑定機の計測結果は、レア度{appraisal.rarity}(5段階)、"
                                  f"属性「{appraisal.element}」、"
                                  f"攻撃{appraisal.attack}・耐久{appraisal.endurance}・魔力{appraisal.magic}"
-                                 "(いずれも0〜100)です。"},
+                                 f"(いずれも0〜100)です。{rarity_instruction}"},
                         {"inlineData": {"mimeType": content_type,
                                         "data": base64.b64encode(contents).decode("ascii")}},
                     ]}],
