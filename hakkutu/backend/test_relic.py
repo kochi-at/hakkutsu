@@ -84,7 +84,9 @@ class RelicTests(unittest.TestCase):
             self.assertIn("name_parts・lore_partsに引用、言い換え、翻訳しない", system_prompt)
             self.assertIn("文字以外の形・色・服装・ポーズだけを根拠", system_prompt)
             self.assertIn("レア度が1の場合に限り", system_prompt)
-            self.assertIn("聖遺物としての価値の低さ", system_prompt)
+            self.assertIn("最低評価の外れ聖遺物", system_prompt)
+            self.assertIn("対象物を褒める表現", system_prompt)
+            self.assertIn("最後に救いや希望を添える表現は禁止", system_prompt)
             self.assertIn("人物の容姿・能力・人格・属性は批判や侮辱の対象にしない", system_prompt)
             # LLMに返させるスキーマにレア度と属性を含めない。
             schema_fields = request["json"]["generationConfig"]["responseJsonSchema"]["properties"]
@@ -94,6 +96,19 @@ class RelicTests(unittest.TestCase):
             self.assertNotIn("lore", schema_fields)
             self.assertIn("name_parts", schema_fields)
             self.assertIn("lore_parts", schema_fields)
+
+    def test_rarity_one_repeats_harsh_tone_instruction_in_user_prompt(self):
+        response = httpx.Response(200, json={"candidates": [{"finishReason": "STOP", "content": {
+            "parts": [{"text": json.dumps(LORE)}]}}]})
+        rarity_one = APPRAISAL.model_copy(update={"rarity": 1})
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}), patch("relic.httpx.Client") as client:
+            post = client.return_value.__enter__.return_value.post
+            post.return_value = response
+            relic.evaluate_photo(b"photo", "image/png", rarity_one)
+            prompt = post.call_args.kwargs["json"]["contents"][0]["parts"][0]["text"]
+        self.assertIn("最優先指示: レア度1です", prompt)
+        self.assertIn("一切褒めず、救いや長所も与えず", prompt)
+        self.assertIn("各文で欠点または失敗", prompt)
 
     def test_name_and_lore_are_built_from_parts(self):
         parts_only = {"name_parts": LORE["name_parts"], "lore_parts": LORE["lore_parts"]}
