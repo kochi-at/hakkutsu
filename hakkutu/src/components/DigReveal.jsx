@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { digTier } from "./digTier";
 import "./DigReveal.css";
 
-const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 700 };
+const TIMING = { flash: 180, rollDuration: 1100, holdAfterRoll: 1200 };
 
 // 鑑定中アイコン: 実際の走査位置ではなく、1枚のアイコンとしてジグザグ格子を描くだけ。
 const ZIGZAG_GRID = 6;

@@ -1,6 +1,15 @@
 @import "../styles/relic-theme.css";
 
 .dig-reveal {
+  --dig-effect-gradient: var(--relic-tier-frame, linear-gradient(155deg, #f1d48d, #a9812f));
+  --dig-ray-opacity: 0.22;
+  --dig-ray-duration: 11s;
+  --dig-effect-saturation: 1;
+  --dig-aura-opacity: 0.2;
+  --dig-aura-background: radial-gradient(circle, rgba(241, 212, 141, 0.28), transparent 68%);
+  --dig-sparkle-opacity: 0;
+  --dig-sparkle-duration: 7s;
+  --dig-result-glow: drop-shadow(0 0 8px rgba(241, 212, 141, 0.28));
   position: relative;
   min-height: min(60vh, 460px);
   display: flex;
@@ -11,6 +20,56 @@
   text-align: center;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* ランクが上がるほど、光量・回転速度・発光・粒子を段階的に強くする */
+.dig-reveal[data-tier="カス"] {
+  --dig-effect-gradient: linear-gradient(155deg, #625946, #302b22 70%, #171511);
+  --dig-ray-opacity: 0.07;
+  --dig-ray-duration: 19s;
+  --dig-effect-saturation: 0.35;
+  --dig-aura-opacity: 0.05;
+  --dig-aura-background: radial-gradient(circle, rgba(98, 89, 70, 0.16), transparent 66%);
+  --dig-result-glow: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.75));
+}
+.dig-reveal[data-tier="ブロンズ"] {
+  --dig-ray-opacity: 0.13;
+  --dig-ray-duration: 15s;
+  --dig-effect-saturation: 0.75;
+  --dig-aura-opacity: 0.12;
+  --dig-aura-background: radial-gradient(circle, rgba(205, 127, 50, 0.28), transparent 67%);
+  --dig-sparkle-opacity: 0.04;
+  --dig-result-glow: drop-shadow(0 0 4px rgba(205, 127, 50, 0.3));
+}
+.dig-reveal[data-tier="シルバー"] {
+  --dig-ray-opacity: 0.2;
+  --dig-ray-duration: 12s;
+  --dig-aura-opacity: 0.22;
+  --dig-aura-background: radial-gradient(circle, rgba(220, 230, 240, 0.34), transparent 68%);
+  --dig-sparkle-opacity: 0.16;
+  --dig-sparkle-duration: 6s;
+  --dig-result-glow: drop-shadow(0 0 7px rgba(220, 230, 240, 0.42));
+}
+.dig-reveal[data-tier="ゴールド"] {
+  --dig-ray-opacity: 0.3;
+  --dig-ray-duration: 8s;
+  --dig-effect-saturation: 1.2;
+  --dig-aura-opacity: 0.38;
+  --dig-aura-background: radial-gradient(circle, rgba(255, 218, 112, 0.48), transparent 70%);
+  --dig-sparkle-opacity: 0.38;
+  --dig-sparkle-duration: 4.5s;
+  --dig-result-glow: drop-shadow(0 0 11px rgba(255, 213, 92, 0.62));
+}
+.dig-reveal[data-tier="レジェンド"] {
+  --dig-effect-gradient: conic-gradient(from 0deg, #ff1744, #ff9100, #ffee00, #00e676, #00b0ff, #651fff, #d500f9, #ff1744);
+  --dig-ray-opacity: 0.5;
+  --dig-ray-duration: 5s;
+  --dig-effect-saturation: 1.55;
+  --dig-aura-opacity: 0.62;
+  --dig-aura-background: conic-gradient(from 0deg, rgba(255, 23, 68, 0.42), rgba(255, 238, 0, 0.36), rgba(0, 230, 118, 0.4), rgba(0, 176, 255, 0.4), rgba(213, 0, 249, 0.42), rgba(255, 23, 68, 0.42));
+  --dig-sparkle-opacity: 0.8;
+  --dig-sparkle-duration: 2.8s;
+  --dig-result-glow: drop-shadow(0 0 14px rgba(255, 255, 255, 0.75));
 }
 
 .dig-reveal-skip {
@@ -65,13 +124,14 @@
   position: absolute;
   inset: 0;
   background: repeating-conic-gradient(from 0deg, rgba(241, 212, 141, 0.22) 0deg 5deg, transparent 5deg 28deg);
-  animation: dig-rays-spin 11s linear infinite;
+  animation: dig-rays-spin var(--dig-ray-duration) linear infinite;
 }
 .dig-reveal[data-tier] .dig-reveal-rays::before {
-  background: var(--relic-tier-frame);
+  background: var(--dig-effect-gradient);
   -webkit-mask-image: repeating-conic-gradient(from 0deg, #000 0deg 5deg, transparent 5deg 28deg);
   mask-image: repeating-conic-gradient(from 0deg, #000 0deg 5deg, transparent 5deg 28deg);
-  opacity: 0.22;
+  opacity: var(--dig-ray-opacity);
+  filter: saturate(var(--dig-effect-saturation));
 }
 .dig-reveal[data-phase="flash"] .dig-reveal-rays,
 .dig-reveal[data-phase="rolling"] .dig-reveal-rays,
@@ -153,6 +213,38 @@
   opacity: 0;
   transition: opacity 0.3s ease;
 }
+.dig-reveal-rarity::before,
+.dig-reveal-rarity::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+.dig-reveal-rarity::before {
+  width: 260px;
+  height: 180px;
+  top: 50%;
+  left: 50%;
+  background: var(--dig-aura-background);
+  border-radius: 50%;
+  opacity: var(--dig-aura-opacity);
+  filter: blur(14px) saturate(var(--dig-effect-saturation));
+  transform: translate(-50%, -50%);
+  animation: dig-aura-pulse 1.8s ease-in-out infinite alternate;
+}
+.dig-reveal-rarity::after {
+  content: "✦　·　✧　·　✦";
+  width: 250px;
+  top: 42%;
+  left: 50%;
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: 0.18em;
+  opacity: var(--dig-sparkle-opacity);
+  text-shadow: 0 0 8px currentColor;
+  transform: translate(-50%, -50%);
+  animation: dig-sparkles var(--dig-sparkle-duration) linear infinite;
+}
 .dig-reveal[data-phase="rolling"] .dig-reveal-rarity,
 .dig-reveal[data-phase="done"] .dig-reveal-rarity {
   opacity: 1;
@@ -203,9 +295,23 @@
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
+.dig-reveal[data-tier] .dig-rarity-num,
+.dig-reveal[data-tier] .dig-stars-filled,
+.dig-reveal[data-tier] .dig-tier {
+  filter: var(--dig-result-glow);
+}
 
 @keyframes dig-rays-spin {
   to { transform: rotate(360deg); }
+}
+@keyframes dig-aura-pulse {
+  from { transform: translate(-50%, -50%) scale(0.88); }
+  to { transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes dig-sparkles {
+  from { transform: translate(-50%, -50%) rotate(0deg) scale(0.9); }
+  50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.08); }
+  to { transform: translate(-50%, -50%) rotate(360deg) scale(0.9); }
 }
 @keyframes dig-flash-pulse {
   0% { opacity: 0; }
@@ -224,10 +330,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dig-zigzag-stroke,
-  .dig-reveal-rays::before {
+  .dig-zigzag-stroke {
     animation: none !important;
     opacity: 0.6;
+  }
+  .dig-reveal-rays::before,
+  .dig-reveal-rarity::before,
+  .dig-reveal-rarity::after {
+    animation: none !important;
   }
 }
 
