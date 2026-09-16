@@ -100,7 +100,11 @@ const DigReveal = forwardRef(function DigReveal({ evaluation, revealStarted = tr
   }), [evaluation, revealStarted]);
 
   return (
-    <div className="dig-reveal" data-phase={phase}>
+    <div
+      className="dig-reveal"
+      data-phase={phase}
+      data-tier={evaluation ? digTier(evaluation.rarity) : undefined}
+    >
       <div className="dig-reveal-rays" aria-hidden="true" />
       <div className="dig-reveal-flash" aria-hidden="true" />
 
